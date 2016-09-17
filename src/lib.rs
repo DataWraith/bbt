@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 pub struct Rater {
     beta_sq: f64
 }
@@ -30,7 +28,7 @@ impl Rater {
         let mut team_omega = Vec::with_capacity(teams.len());
         let mut team_delta = Vec::with_capacity(teams.len());
 
-        for i in 0..teams.len() {
+        for _ in 0..teams.len() {
             team_mu.push(0.0);
             team_sigma_sq.push(0.0);
             team_omega.push(0.0);
@@ -56,8 +54,8 @@ impl Rater {
         // Step 2 - Compute Team Omega and Delta ///////////////////////////////
         ////////////////////////////////////////////////////////////////////////
 
-        for (team_idx, team) in teams.iter().enumerate() {
-            for (team2_idx, team2) in teams.iter().enumerate() {
+        for (team_idx, _) in teams.iter().enumerate() {
+            for (team2_idx, _) in teams.iter().enumerate() {
                 if team_idx == team2_idx {
                     continue
                 }
