@@ -18,42 +18,37 @@ impl Default for Rater {
 
 impl Rater {
     fn update_ratings(&self,
-                      players: Vec<Rating>,
-                      team_nr: Vec<usize>,
-                      rank: HashMap<usize, usize>) -> Result<Vec<Rating>, &'static str> {
+                      teams: Vec<Vec<Rating>>,
+                      ranks: Vec<usize>) -> Result<Vec<Vec<Rating>>, &'static str> {
 
-        if players.len() != team_nr.len() {
-            return Err("`players` and `team_nr` vectors must be of the same length")
+        if teams.len() != ranks.len() {
+            return Err("`teams` and `ranks` vectors must be of the same length")
         }
 
-        let mut team_mu : HashMap<usize, f64> = HashMap::new();
-        let mut team_sigma_sq : HashMap<usize, f64> = HashMap::new();
-        let mut team_omega : HashMap<usize, f64> = HashMap::new();
-        let mut team_delta : HashMap<usize, f64> = HashMap::new();
+        let mut team_mu = Vec::with_capacity(teams.len());
+        let mut team_sigma_sq = Vec::with_capacity(teams.len());
+        let mut team_omega = Vec::with_capacity(teams.len());
+        let mut team_delta = Vec::with_capacity(teams.len());
+
+        for i in 0..teams.len() {
+            team_mu.push(0.0);
+            team_sigma_sq.push(0.0);
+            team_omega.push(0.0);
+            team_delta.push(0.0);
+        }
 
         ////////////////////////////////////////////////////////////////////////
         // Step 1 - Collect Team skill and variance ////////////////////////////
         ////////////////////////////////////////////////////////////////////////
 
-        for it in players.iter().zip(team_nr.iter()) {
-            let (player, team_nr) = it;
-
-            if team_mu.contains_key(team_nr) {
-                *team_mu.get_mut(team_nr).unwrap() += player.mu;
-            } else {
-                team_mu.insert(*team_nr, player.mu);
+        for (team_idx, team) in teams.iter().enumerate() {
+            if team.is_empty() {
+                return Err("At least one of the teams contains no players")
             }
 
-            if team_sigma_sq.contains_key(team_nr) {
-                *team_sigma_sq.get_mut(team_nr).unwrap() += player.sigma_sq;
-            } else {
-                team_sigma_sq.insert(*team_nr, player.sigma_sq);
-            }
-        }
-
-        for team in team_mu.keys() {
-            if rank.get(team).is_none() {
-                return Err("Missing rank information for at least one team");
+            for player in team.iter() {
+                team_mu[team_idx] += player.mu;
+                team_sigma_sq[team_idx] += player.sigma_sq;
             }
         }
 
@@ -61,15 +56,19 @@ impl Rater {
         // Step 2 - Compute Team Omega and Delta ///////////////////////////////
         ////////////////////////////////////////////////////////////////////////
 
-        for team in team_mu.keys() {
-            for team2 in team_mu.keys().filter(|t| **t != *team) {
-                let c = (team_sigma_sq.get(team).unwrap() + team_sigma_sq.get(team2).unwrap() + 2.0 * self.beta_sq).sqrt();
-                let e1 = (team_mu.get(team).unwrap() / c).exp();
-                let e2 = (team_mu.get(team2).unwrap() / c).exp();
+        for (team_idx, team) in teams.iter().enumerate() {
+            for (team2_idx, team2) in teams.iter().enumerate() {
+                if team_idx == team2_idx {
+                    continue
+                }
+
+                let c = (team_sigma_sq[team_idx] + team_sigma_sq[team2_idx] + 2.0 * self.beta_sq).sqrt();
+                let e1 = (team_mu[team_idx] / c).exp();
+                let e2 = (team_mu[team2_idx] / c).exp();
                 let piq = e1 / (e1 + e2);
                 let pqi = e2 / (e1 + e2);
-                let ri = rank.get(team).unwrap();
-                let rq = rank.get(team2).unwrap();
+                let ri = ranks[team_idx];
+                let rq = ranks[team2_idx];
                 let s = if rq > ri {
                     1.0
                 } else if rq == ri {
@@ -77,22 +76,12 @@ impl Rater {
                 } else {
                     0.0
                 };
-                let delta = team_sigma_sq.get(team).unwrap() / c * (s - piq);
-                let y = team_sigma_sq.get(team).unwrap().sqrt() / c;
-                let eta = y * (team_sigma_sq.get(team).unwrap() / (c * c)) * piq * pqi;
+                let delta = team_sigma_sq[team_idx] / c * (s - piq);
+                let y = team_sigma_sq[team_idx].sqrt() / c;
+                let eta = y * (team_sigma_sq[team_idx] / (c * c)) * piq * pqi;
 
-
-                if team_omega.contains_key(team) {
-                    *team_omega.get_mut(team).unwrap() += delta;
-                } else {
-                    team_omega.insert(*team, delta);
-                }
-
-                if team_delta.contains_key(team) {
-                    *team_delta.get_mut(team).unwrap() += eta;
-                } else {
-                    team_delta.insert(*team, eta);
-                }
+                team_omega[team_idx] += delta;
+                team_delta[team_idx] += eta;
             }
         }
 
@@ -100,22 +89,26 @@ impl Rater {
         // Step 3 - Individual skill update ////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////
 
-        let mut result = Vec::with_capacity(players.len());
-        for it in players.iter().zip(team_nr.iter()) {
-            let (player, team_nr) = it;
+        let mut result = Vec::with_capacity(teams.len());
 
-            let new_mu = player.mu + team_omega.get(team_nr).unwrap() * (player.sigma_sq / team_sigma_sq.get(team_nr).unwrap());
-            let mut sigma_adj = 1.0 - (player.sigma_sq / team_sigma_sq.get(team_nr).unwrap() * team_delta.get(team_nr).unwrap());
-            if sigma_adj < 0.0001 {
-                sigma_adj = 0.0001;
-            };
-            let new_sigma_sq = player.sigma_sq * sigma_adj;
+        for (team_idx, team) in teams.iter().enumerate() {
+            let mut team_result = Vec::with_capacity(team.len());
 
-            result.push(Rating { mu: new_mu, sigma: new_sigma_sq.sqrt(), sigma_sq: new_sigma_sq });
+            for player in team.iter() {
+                let new_mu = player.mu + team_omega[team_idx] * (player.sigma_sq / team_sigma_sq[team_idx]);
+                let mut sigma_adj = 1.0 - (player.sigma_sq / team_sigma_sq[team_idx]) * team_delta[team_idx];
+                if sigma_adj < 0.0001 {
+                    sigma_adj = 0.0001;
+                }
+                let new_sigma_sq = player.sigma_sq * sigma_adj;
+
+                team_result.push(Rating { mu: new_mu, sigma: new_sigma_sq.sqrt(), sigma_sq: new_sigma_sq });
+            }
+
+            result.push(team_result);
         }
 
         Ok(result)
-
     }
 }
 
@@ -162,11 +155,8 @@ mod test {
         let p2 = ::Rating::default();
 
         let rater = ::Rater::default();
-        let mut ranks = ::std::collections::HashMap::new();
-        ranks.insert(0, 0);
-        ranks.insert(1, 1);
-        let new_rs = rater.update_ratings(vec![p1, p2], vec![0, 1], ranks).unwrap();
+        let new_rs = rater.update_ratings(vec![vec![p1], vec![p2]], vec![0, 1]).unwrap();
 
-        assert!(new_rs[0].mu > new_rs[1].mu);
+        assert!(new_rs[0][0].mu > new_rs[1][0].mu);
     }
 }
