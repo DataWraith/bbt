@@ -11,36 +11,55 @@ TrueSkill. It follows `Algorithm 1` from the paper
 As a first step, you need to instantiate a Rater:
 
 ```rust
-let rater = bbt::Rater::new(25.0/6)
+let rater = bbt::Rater::new(25.0/6);
 ```
 
 The new() function takes one parameter, ꞵ. This parameter describes how much
 randomness (variance in outcomes) your game has. For example, a game like
 Hearthstone is much more luck-based than chess and should have a higher
-variance, you may need to experiment to see which value has the highest
+variance; you may need to experiment to see which value has the highest
 predictive power.
 
 ### Two-player games (e.g. Chess)
 
-TODO
+BBT has a convenience function for two-player games that returns the new ratings
+for the two players after a game. In the example, p1 wins against p2:
 
-### Multiplayer games without teams (e.g. Racing games)
+```rust
+let p1 = bbt::Rating::default();
+let p2 = bbt::Rating::default();
+let (new\_p1, new\_p2) = rater::duel(p1, p2, bbt::Outcome::Win);
+```
 
-#### Without draws
+The `bbt::Outcome` enum can take on the values `Win`, `Loss` and `Tie`.
 
-TODO
+### Multiplayer games
 
-#### With draws
+Games with more than two players will have to use the general `update_ratings`
+method. It takes a vector of teams and a vector of ranks, with each team being a
+vector of player ratings. If no error occurs, the method returns a vector of the
+same form as the input with updated ratings.
 
-TODO
+#### Example 1: Racing Game
 
-### Multiplayer games with teams
+In a racing game without teams, each player is represented as a "team" of one,
+and since there are usually no ties in a racing game, the list of ranks contains
+no duplicates:
 
-#### Without draws
+```rust
+let p1 = bbt::Rating::default();
+// ...
+let p6 = bbt::Rating::default();
 
-TODO
+let new_ratings = rater::update_ratings(vec![vec![p1], vec![p2], vec![p3],
+                                             vec![p4], vec![p5], vec![p6]],
+                                        vec![1, 2, 3, 4, 5, 6]);
+```
 
-#### With draws
+In the example, the first player places first, the second player second, and so
+on.
+
+#### Example 2: Tied Teams
 
 Let's say you have a hypothetical game with four teams and two players per team.
 
@@ -53,20 +72,19 @@ If Team 1 wins, and Team 2 and 3 draw for second place and Team 4 loses, you can
 call the `update_ratings` function as follows:
 
 ```rust
-rater = bbt::Rater::new(25.0/6)
+rater = bbt::Rater::default();
 
-alice = bbt::Rating::default()
-bob   = bbt::Rating::default()
+alice = bbt::Rating::default();
+bob   = bbt::Rating::default();
 // ...
-henry = bbt::Rating::default()
+henry = bbt::Rating::default();
 
 rater::update_ratings(vec![vec![alice, bob],
                            vec![charlie, dave],
                            vec![eve, fred],
                            vec![gabe, henry]],
                       vec![1, 2, 2, 4]);
-)
 ```
 
 The second vector assigns a rank to the teams given in the first vector. Team 1
-placed first, teams 2 and 3 second and team 4 fourth.
+placed first, teams 2 and 3 tie for second place and team 4 comes in fourth.
