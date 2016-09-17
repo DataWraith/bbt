@@ -11,7 +11,7 @@ TrueSkill. It follows `Algorithm 1` from the paper
 As a first step, you need to instantiate a Rater:
 
 ```rust
-let rater = bbt::Rater::new(25.0/6);
+let rater = bbt::Rater::new(25.0/6.0);
 ```
 
 The new() function takes one parameter, ꞵ. This parameter describes how much
@@ -28,7 +28,7 @@ for the two players after a game. In the example, p1 wins against p2:
 ```rust
 let p1 = bbt::Rating::default();
 let p2 = bbt::Rating::default();
-let (new\_p1, new\_p2) = rater::duel(p1, p2, bbt::Outcome::Win);
+let (new_p1, new_p2) = rater::duel(p1, p2, bbt::Outcome::Win);
 ```
 
 The `bbt::Outcome` enum can take on the values `Win`, `Loss` and `Tie`.
@@ -88,3 +88,12 @@ rater::update_ratings(vec![vec![alice, bob],
 
 The second vector assigns a rank to the teams given in the first vector. Team 1
 placed first, teams 2 and 3 tie for second place and team 4 comes in fourth.
+
+## Rating scale
+
+The default rating scale follows TrueSkill's convention of ranks from 0 to 50.
+You should be able to use a different scale by specifying the middle of that
+scale in `Rating::new()`. For example, to use a more traditional scale of 0 to
+3000, you can initialize ratings with `Rating::new(1500.0, 1500.0/3.0)`. You'll
+also need to adjust the ϐ-value of the Rater instance accordingly:
+`Rater::new(1500.0/6.0)`.
