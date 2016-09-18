@@ -2,5 +2,10 @@
 name = "bbt"
 version = "0.1.0"
 authors = ["Johannes Holzfuß <johannes@holzfuss.name>"]
+description = "A skill-rating system similar to Elo, Glicko or TrueSkill"
+repository = "https://github.com/DataWraith/bbt"
+readme = "README.md"
+keywords = ["bayesian", "skill", "rating"]
+license = "MIT"
 
 [dependencies]
