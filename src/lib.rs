@@ -25,8 +25,11 @@
 //! p2:
 //!
 //! ```rust
+//! let rater = bbt::Rater::default();
+//!
 //! let p1 = bbt::Rating::default();
 //! let p2 = bbt::Rating::default();
+//!
 //! let (new_p1, new_p2) = rater.duel(p1, p2, bbt::Outcome::Win);
 //! ```
 //!
@@ -46,8 +49,13 @@
 //! contains no duplicates:
 //!
 //! ```rust
+//! let rater = bbt::Rater::default();
+//!
 //! let p1 = bbt::Rating::default();
-//! // ...
+//! let p2 = bbt::Rating::default();
+//! let p3 = bbt::Rating::default();
+//! let p4 = bbt::Rating::default();
+//! let p5 = bbt::Rating::default();
 //! let p6 = bbt::Rating::default();
 //!
 //! let new_ratings = rater.update_ratings(vec![vec![p1], vec![p2], vec![p3],
@@ -72,18 +80,22 @@
 //! can call the `update_ratings` function as follows:
 //!
 //! ```rust
-//! rater = bbt::Rater::default();
+//! let rater = bbt::Rater::default();
 //!
-//! alice = bbt::Rating::default();
-//! bob   = bbt::Rating::default();
-//! // ...
-//! henry = bbt::Rating::default();
+//! let alice   = bbt::Rating::default();
+//! let bob     = bbt::Rating::default();
+//! let charlie = bbt::Rating::default();
+//! let dave    = bbt::Rating::default();
+//! let eve     = bbt::Rating::default();
+//! let fred    = bbt::Rating::default();
+//! let gabe    = bbt::Rating::default();
+//! let henry   = bbt::Rating::default();
 //!
-//! let new_ratings = rater::update_ratings(vec![vec![alice, bob],
-//!                                              vec![charlie, dave],
-//!                                              vec![eve, fred],
-//!                                              vec![gabe, henry]],
-//!                                         vec![1, 2, 2, 4]).unwrap();
+//! let new_ratings = rater.update_ratings(vec![vec![alice, bob],
+//!                                             vec![charlie, dave],
+//!                                             vec![eve, fred],
+//!                                             vec![gabe, henry]],
+//!                                        vec![1, 2, 2, 4]).unwrap();
 //! ```
 //!
 //! The second vector assigns a rank to the teams given in the first vector.
