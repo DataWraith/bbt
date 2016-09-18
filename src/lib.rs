@@ -292,7 +292,7 @@ impl fmt::Debug for Rating {
 }
 
 impl Rating {
-    fn new(mu: f64, sigma: f64) -> Rating {
+    pub fn new(mu: f64, sigma: f64) -> Rating {
         Rating { mu: mu, sigma: sigma, sigma_sq: sigma.powf(2.0) }
     }
 
