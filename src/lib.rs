@@ -166,6 +166,9 @@ impl Rating {
     fn new(mu: f64, sigma: f64) -> Rating {
         Rating { mu: mu, sigma: sigma, sigma_sq: sigma.powf(2.0) }
     }
+
+    fn mu(&self)    -> f64 { self.mu }
+    fn sigma(&self) -> f64 { self.sigma }
 }
 
 // TODO: Serialization/Deserialization for Rating
