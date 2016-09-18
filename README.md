@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/DataWraith/bbt.svg?branch=master)](https://travis-ci.org/DataWraith/bbt)
+
 # BBT
 
 BBT is an implementation of a skill-rating system similar to Elo, Glicko or
