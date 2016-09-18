@@ -174,8 +174,6 @@ mod test {
         let rater = ::Rater::default();
         let new_rs = rater.update_ratings(vec![vec![p1], vec![p2]], vec![0, 1]).unwrap();
 
-        println!("{}", new_rs[0][0].sigma);
-
         assert!((new_rs[0][0].mu - 27.63523138).abs() < 1.0/100000000.0);
         assert!((new_rs[0][0].sigma - 8.0655063).abs() < 1.0/1000000.0);
         assert!((new_rs[1][0].mu - 22.36476861).abs() < 1.0/100000000.0);
@@ -194,5 +192,29 @@ mod test {
         assert!(new_p2.mu == 25.0);
         assert!((new_p1.sigma - 8.0655063).abs() < 1.0/1000000.0);
         assert!((new_p2.sigma - 8.0655063).abs() < 1.0/1000000.0);
+    }
+
+    #[test]
+    fn four_player_race() {
+        let p1 = ::Rating::default();
+        let p2 = ::Rating::default();
+        let p3 = ::Rating::default();
+        let p4 = ::Rating::default();
+
+        let rater = ::Rater::default();
+        let teams = vec![vec![p1], vec![p2], vec![p3], vec![p4]];
+        let ranks = vec![1, 2, 3, 4];
+
+        let new_ratings = rater.update_ratings(teams, ranks).unwrap();
+
+        assert!((new_ratings[0][0].mu - 32.9056941).abs() < 1.0/10000000.0);
+        assert!((new_ratings[1][0].mu - 27.6352313).abs() < 1.0/10000000.0);
+        assert!((new_ratings[2][0].mu - 22.3647686).abs() < 1.0/10000000.0);
+        assert!((new_ratings[3][0].mu - 17.0943058).abs() < 1.0/10000000.0);
+
+        assert!((new_ratings[0][0].sigma - 7.50121906).abs() < 1.0/1000000.0);
+        assert!((new_ratings[1][0].sigma - 7.50121906).abs() < 1.0/1000000.0);
+        assert!((new_ratings[2][0].sigma - 7.50121906).abs() < 1.0/1000000.0);
+        assert!((new_ratings[3][0].sigma - 7.50121906).abs() < 1.0/1000000.0);
     }
 }
