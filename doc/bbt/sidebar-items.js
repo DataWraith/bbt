@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Outcome","Outcome represents the outcome of a head-to-head duel between two players."]],"struct":[["Rater","Rater is used to calculate rating updates given the β-parameter."],["Rating","Rating represents the skill of a player."]]});
