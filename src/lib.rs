@@ -167,13 +167,32 @@ mod test {
     }
 
     #[test]
-    fn two_player_duel() {
+    fn two_player_duel_win_loss() {
         let p1 = ::Rating::default();
         let p2 = ::Rating::default();
 
         let rater = ::Rater::default();
         let new_rs = rater.update_ratings(vec![vec![p1], vec![p2]], vec![0, 1]).unwrap();
 
-        assert!(new_rs[0][0].mu > new_rs[1][0].mu);
+        println!("{}", new_rs[0][0].sigma);
+
+        assert!((new_rs[0][0].mu - 27.63523138).abs() < 1.0/100000000.0);
+        assert!((new_rs[0][0].sigma - 8.0655063).abs() < 1.0/1000000.0);
+        assert!((new_rs[1][0].mu - 22.36476861).abs() < 1.0/100000000.0);
+        assert!((new_rs[1][0].sigma - 8.0655063).abs() < 1.0/1000000.0);
+    }
+
+    #[test]
+    fn two_player_duel_tie() {
+        let p1 = ::Rating::default();
+        let p2 = ::Rating::default();
+
+        let rater = ::Rater::default();
+        let (new_p1, new_p2) = rater.duel(p1, p2, ::Outcome::Tie);
+
+        assert!(new_p1.mu == 25.0);
+        assert!(new_p2.mu == 25.0);
+        assert!((new_p1.sigma - 8.0655063).abs() < 1.0/1000000.0);
+        assert!((new_p2.sigma - 8.0655063).abs() < 1.0/1000000.0);
     }
 }
