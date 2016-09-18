@@ -8,5 +8,6 @@ documentation = "https://datawraith.github.io/bbt/doc/bbt/index.html"
 readme = "README.md"
 keywords = ["bayesian", "skill", "rating"]
 license = "MIT"
+exclude = [".travis.yml"]
 
 [dependencies]
