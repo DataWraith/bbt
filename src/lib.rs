@@ -1,3 +1,5 @@
+use std::fmt;
+
 pub struct Rater {
     beta_sq: f64
 }
@@ -145,6 +147,18 @@ impl Default for Rating {
 impl PartialOrd for Rating {
     fn partial_cmp(&self, other: &Rating) -> Option<std::cmp::Ordering> {
         (self.mu - 3.0 * self.sigma).partial_cmp(&(other.mu - 3.0 * other.sigma))
+    }
+}
+
+impl fmt::Display for Rating {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.mu - 3.0 * self.sigma)
+    }
+}
+
+impl fmt::Debug for Rating {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}±{}", self.mu, 3.0 * self.sigma)
     }
 }
 
