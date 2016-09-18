@@ -108,9 +108,28 @@ impl Rater {
 
         Ok(result)
     }
+
+    fn duel(&self, p1: Rating, p2: Rating, outcome: Outcome) -> (Rating, Rating) {
+        let teams = vec![vec![p1], vec![p2]];
+        let ranks = match outcome {
+            Outcome::Win => vec![1, 2],
+            Outcome::Loss => vec![2, 1],
+            Outcome::Tie => vec![1, 1],
+        };
+
+        let result = self.update_ratings(teams, ranks).unwrap();
+
+        (result[0][0].clone(), result[1][0].clone())
+    }
 }
 
-#[derive(PartialEq)]
+enum Outcome {
+    Win,
+    Loss,
+    Tie
+}
+
+#[derive(PartialEq, Clone)]
 pub struct Rating {
     mu: f64,
     sigma: f64,
