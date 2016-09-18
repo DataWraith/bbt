@@ -74,9 +74,9 @@ impl Rater {
                 } else {
                     0.0
                 };
-                let delta = team_sigma_sq[team_idx] / c * (s - piq);
-                let y = team_sigma_sq[team_idx].sqrt() / c;
-                let eta = y * (team_sigma_sq[team_idx] / (c * c)) * piq * pqi;
+                let delta = (team_sigma_sq[team_idx] / c) * (s - piq);
+                let gamma = team_sigma_sq[team_idx].sqrt() / c;
+                let eta = gamma * (team_sigma_sq[team_idx] / (c * c)) * piq * pqi;
 
                 team_omega[team_idx] += delta;
                 team_delta[team_idx] += eta;
@@ -93,7 +93,7 @@ impl Rater {
             let mut team_result = Vec::with_capacity(team.len());
 
             for player in team.iter() {
-                let new_mu = player.mu + team_omega[team_idx] * (player.sigma_sq / team_sigma_sq[team_idx]);
+                let new_mu = player.mu + (player.sigma_sq / team_sigma_sq[team_idx]) * team_omega[team_idx];
                 let mut sigma_adj = 1.0 - (player.sigma_sq / team_sigma_sq[team_idx]) * team_delta[team_idx];
                 if sigma_adj < 0.0001 {
                     sigma_adj = 0.0001;
