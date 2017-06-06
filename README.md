@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/DataWraith/bbt.svg?branch=master)](https://travis-ci.org/DataWraith/bbt)
 
+**Status**: In maintenance mode. I will address Issues and Pull requests, but have no plans to add new features.
+
 # BBT
 
 BBT is an implementation of a skill-rating system similar to Elo, Glicko or
