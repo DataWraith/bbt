@@ -1,8 +1,8 @@
-use serde::{Serialize, Serializer};
-use Rating;
+use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde::ser::SerializeStruct;
-use serde::de::{self, Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
+use serde::{Serialize, Serializer};
 use std::fmt;
+use Rating;
 
 impl Serialize for Rating {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -21,7 +21,10 @@ impl<'de> Deserialize<'de> for Rating {
     where
         D: Deserializer<'de>,
     {
-        enum Field { Mu, Sigma };
+        enum Field {
+            Mu,
+            Sigma,
+        };
 
         impl<'de> Deserialize<'de> for Field {
             fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
@@ -55,7 +58,7 @@ impl<'de> Deserialize<'de> for Rating {
 
         struct RatingVisitor;
 
-        impl <'de> Visitor<'de> for RatingVisitor {
+        impl<'de> Visitor<'de> for RatingVisitor {
             type Value = Rating;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -64,7 +67,7 @@ impl<'de> Deserialize<'de> for Rating {
 
             fn visit_seq<V>(self, mut seq: V) -> Result<Rating, V::Error>
             where
-                V: SeqAccess<'de>
+                V: SeqAccess<'de>,
             {
                 let mu = seq.next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
@@ -75,7 +78,7 @@ impl<'de> Deserialize<'de> for Rating {
 
             fn visit_map<V>(self, mut map: V) -> Result<Rating, V::Error>
             where
-                V: MapAccess<'de>
+                V: MapAccess<'de>,
             {
                 let mut mu = None;
                 let mut sigma = None;
@@ -83,14 +86,14 @@ impl<'de> Deserialize<'de> for Rating {
                     match key {
                         Field::Mu => {
                             if mu.is_some() {
-                                return Err(de::Error::duplicate_field("mu"))
+                                return Err(de::Error::duplicate_field("mu"));
                             } else {
                                 mu = Some(map.next_value()?);
                             }
                         }
                         Field::Sigma => {
                             if sigma.is_some() {
-                                return Err(de::Error::duplicate_field("sigma"))
+                                return Err(de::Error::duplicate_field("sigma"));
                             } else {
                                 sigma = Some(map.next_value()?);
                             }
@@ -103,7 +106,7 @@ impl<'de> Deserialize<'de> for Rating {
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["mu", "sigma"];
+        const FIELDS: &[&str] = &["mu", "sigma"];
         deserializer.deserialize_struct("Rating", FIELDS, RatingVisitor)
     }
 }

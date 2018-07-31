@@ -111,23 +111,25 @@
 //! also need to adjust the β-value of the Rater instance accordingly:
 //! `Rater::new(1500.0/6.0)`.
 
-#[cfg(feature="serde")]
+#[cfg(feature = "serde")]
 extern crate serde;
 
-#[cfg(feature="serde")]
+#[cfg(feature = "serde")]
 mod serialization;
 
 use std::fmt;
 
 /// Rater is used to calculate rating updates given the β-parameter.
 pub struct Rater {
-    beta_sq: f64
+    beta_sq: f64,
 }
 
 impl Rater {
     /// This method instantiates a new rater with the given β-parameter.
     pub fn new(beta: f64) -> Rater {
-        Rater { beta_sq: beta * beta }
+        Rater {
+            beta_sq: beta * beta,
+        }
     }
 }
 
@@ -135,7 +137,7 @@ impl Default for Rater {
     /// This method instantiates a new rater the default β-parameter of 25.0/6.0
     /// used in the paper.
     fn default() -> Rater {
-        Rater::new(25.0/6.0)
+        Rater::new(25.0 / 6.0)
     }
 }
 
@@ -146,12 +148,13 @@ impl Rater {
     /// `Err(error_message)` if the input is incorrect or
     /// `Ok(Vec<Vec<Rating>>)`. The returned vector is an updated version of
     /// the `teams` vector that was passed into the function.
-    pub fn update_ratings(&self,
-                      teams: Vec<Vec<Rating>>,
-                      ranks: Vec<usize>) -> Result<Vec<Vec<Rating>>, &'static str> {
-
+    pub fn update_ratings(
+        &self,
+        teams: Vec<Vec<Rating>>,
+        ranks: Vec<usize>,
+    ) -> Result<Vec<Vec<Rating>>, &'static str> {
         if teams.len() != ranks.len() {
-            return Err("`teams` and `ranks` vectors must be of the same length")
+            return Err("`teams` and `ranks` vectors must be of the same length");
         }
 
         let mut team_mu = Vec::with_capacity(teams.len());
@@ -172,7 +175,7 @@ impl Rater {
 
         for (team_idx, team) in teams.iter().enumerate() {
             if team.is_empty() {
-                return Err("At least one of the teams contains no players")
+                return Err("At least one of the teams contains no players");
             }
 
             for player in team.iter() {
@@ -188,10 +191,11 @@ impl Rater {
         for (team_idx, _) in teams.iter().enumerate() {
             for (team2_idx, _) in teams.iter().enumerate() {
                 if team_idx == team2_idx {
-                    continue
+                    continue;
                 }
 
-                let c = (team_sigma_sq[team_idx] + team_sigma_sq[team2_idx] + 2.0 * self.beta_sq).sqrt();
+                let c = (team_sigma_sq[team_idx] + team_sigma_sq[team2_idx] + 2.0 * self.beta_sq)
+                    .sqrt();
                 let e1 = (team_mu[team_idx] / c).exp();
                 let e2 = (team_mu[team2_idx] / c).exp();
                 let piq = e1 / (e1 + e2);
@@ -224,14 +228,20 @@ impl Rater {
             let mut team_result = Vec::with_capacity(team.len());
 
             for player in team.iter() {
-                let new_mu = player.mu + (player.sigma_sq / team_sigma_sq[team_idx]) * team_omega[team_idx];
-                let mut sigma_adj = 1.0 - (player.sigma_sq / team_sigma_sq[team_idx]) * team_delta[team_idx];
+                let new_mu =
+                    player.mu + (player.sigma_sq / team_sigma_sq[team_idx]) * team_omega[team_idx];
+                let mut sigma_adj =
+                    1.0 - (player.sigma_sq / team_sigma_sq[team_idx]) * team_delta[team_idx];
                 if sigma_adj < 0.0001 {
                     sigma_adj = 0.0001;
                 }
                 let new_sigma_sq = player.sigma_sq * sigma_adj;
 
-                team_result.push(Rating { mu: new_mu, sigma: new_sigma_sq.sqrt(), sigma_sq: new_sigma_sq });
+                team_result.push(Rating {
+                    mu: new_mu,
+                    sigma: new_sigma_sq.sqrt(),
+                    sigma_sq: new_sigma_sq,
+                });
             }
 
             result.push(team_result);
@@ -259,6 +269,7 @@ impl Rater {
 }
 
 /// Outcome represents the outcome of a head-to-head duel between two players.
+#[derive(Clone, Copy)]
 pub enum Outcome {
     /// The first player won the game
     Win,
@@ -267,7 +278,7 @@ pub enum Outcome {
     Loss,
 
     /// Neither player won
-    Draw
+    Draw,
 }
 
 /// Rating represents the skill of a player.
@@ -275,14 +286,17 @@ pub enum Outcome {
 pub struct Rating {
     mu: f64,
     sigma: f64,
-    sigma_sq: f64
+    sigma_sq: f64,
 }
 
 impl Default for Rating {
-
     /// Instantiates a Rating with the default values of mu=25.0 and sigma=25.0/3.0
     fn default() -> Rating {
-        Rating{ mu: 25.0, sigma: 25.0/3.0, sigma_sq: f64::powf(25.0/3.0, 2.0) }
+        Rating {
+            mu: 25.0,
+            sigma: 25.0 / 3.0,
+            sigma_sq: f64::powf(25.0 / 3.0, 2.0),
+        }
     }
 }
 
@@ -296,7 +310,7 @@ impl fmt::Display for Rating {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let cons_est = self.mu - 3.0 * self.sigma;
         if cons_est < 0.0 {
-            write!(f, "{}", 0.0)
+            write!(f, "0.0")
         } else {
             write!(f, "{}", cons_est)
         }
@@ -311,14 +325,22 @@ impl fmt::Debug for Rating {
 
 impl Rating {
     pub fn new(mu: f64, sigma: f64) -> Rating {
-        Rating { mu: mu, sigma: sigma, sigma_sq: sigma.powf(2.0) }
+        Rating {
+            mu,
+            sigma,
+            sigma_sq: sigma.powf(2.0),
+        }
     }
 
     /// Returns the estimated skill of the player.
-    pub fn mu(&self)    -> f64 { self.mu }
+    pub fn mu(&self) -> f64 {
+        self.mu
+    }
 
     /// Returns the variance on the estimate of the player's skill.
-    pub fn sigma(&self) -> f64 { self.sigma }
+    pub fn sigma(&self) -> f64 {
+        self.sigma
+    }
 }
 
 #[cfg(test)]
@@ -327,8 +349,8 @@ mod test {
     #[test]
     fn can_instantiate_ratings() {
         let default_rating = ::Rating::default();
-        let new_rating = ::Rating::new(25.0, 25.0/3.0);
-        assert!(default_rating == new_rating)
+        let new_rating = ::Rating::new(25.0, 25.0 / 3.0);
+        assert_eq!(default_rating, new_rating)
     }
 
     #[test]
@@ -337,12 +359,14 @@ mod test {
         let p2 = ::Rating::default();
 
         let rater = ::Rater::default();
-        let new_rs = rater.update_ratings(vec![vec![p1], vec![p2]], vec![0, 1]).unwrap();
+        let new_rs = rater
+            .update_ratings(vec![vec![p1], vec![p2]], vec![0, 1])
+            .unwrap();
 
-        assert!((new_rs[0][0].mu - 27.63523138).abs() < 1.0/100000000.0);
-        assert!((new_rs[0][0].sigma - 8.0655063).abs() < 1.0/1000000.0);
-        assert!((new_rs[1][0].mu - 22.36476861).abs() < 1.0/100000000.0);
-        assert!((new_rs[1][0].sigma - 8.0655063).abs() < 1.0/1000000.0);
+        assert!((new_rs[0][0].mu - 27.63523138).abs() < 1.0 / 100000000.0);
+        assert!((new_rs[0][0].sigma - 8.0655063).abs() < 1.0 / 1000000.0);
+        assert!((new_rs[1][0].mu - 22.36476861).abs() < 1.0 / 100000000.0);
+        assert!((new_rs[1][0].sigma - 8.0655063).abs() < 1.0 / 1000000.0);
     }
 
     #[test]
@@ -353,10 +377,10 @@ mod test {
         let rater = ::Rater::default();
         let (new_p1, new_p2) = rater.duel(p1, p2, ::Outcome::Draw);
 
-        assert!(new_p1.mu == 25.0);
-        assert!(new_p2.mu == 25.0);
-        assert!((new_p1.sigma - 8.0655063).abs() < 1.0/1000000.0);
-        assert!((new_p2.sigma - 8.0655063).abs() < 1.0/1000000.0);
+        assert_eq!(new_p1.mu, 25.0);
+        assert_eq!(new_p2.mu, 25.0);
+        assert!((new_p1.sigma - 8.0655063).abs() < 1.0 / 1000000.0);
+        assert!((new_p2.sigma - 8.0655063).abs() < 1.0 / 1000000.0);
     }
 
     #[test]
@@ -372,14 +396,14 @@ mod test {
 
         let new_ratings = rater.update_ratings(teams, ranks).unwrap();
 
-        assert!((new_ratings[0][0].mu - 32.9056941).abs() < 1.0/10000000.0);
-        assert!((new_ratings[1][0].mu - 27.6352313).abs() < 1.0/10000000.0);
-        assert!((new_ratings[2][0].mu - 22.3647686).abs() < 1.0/10000000.0);
-        assert!((new_ratings[3][0].mu - 17.0943058).abs() < 1.0/10000000.0);
+        assert!((new_ratings[0][0].mu - 32.9056941).abs() < 1.0 / 10000000.0);
+        assert!((new_ratings[1][0].mu - 27.6352313).abs() < 1.0 / 10000000.0);
+        assert!((new_ratings[2][0].mu - 22.3647686).abs() < 1.0 / 10000000.0);
+        assert!((new_ratings[3][0].mu - 17.0943058).abs() < 1.0 / 10000000.0);
 
-        assert!((new_ratings[0][0].sigma - 7.50121906).abs() < 1.0/1000000.0);
-        assert!((new_ratings[1][0].sigma - 7.50121906).abs() < 1.0/1000000.0);
-        assert!((new_ratings[2][0].sigma - 7.50121906).abs() < 1.0/1000000.0);
-        assert!((new_ratings[3][0].sigma - 7.50121906).abs() < 1.0/1000000.0);
+        assert!((new_ratings[0][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((new_ratings[1][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((new_ratings[2][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((new_ratings[3][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
     }
 }
