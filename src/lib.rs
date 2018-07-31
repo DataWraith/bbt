@@ -111,6 +111,12 @@
 //! also need to adjust the β-value of the Rater instance accordingly:
 //! `Rater::new(1500.0/6.0)`.
 
+#[cfg(feature="serde")]
+extern crate serde;
+
+#[cfg(feature="serde")]
+mod serialization;
+
 use std::fmt;
 
 /// Rater is used to calculate rating updates given the β-parameter.
