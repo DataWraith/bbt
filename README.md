@@ -19,5 +19,5 @@ Add BBT to your Cargo.toml:
 bbt = "0.1.0"
 ```
 
-See the [Documentation](https://datawraith.github.io/bbt/doc/bbt/index.html) for
-information on how to use the crate.
+See the [Documentation](https://docs.rs/bbt/) for information on how to use the
+crate.
