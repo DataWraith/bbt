@@ -11,3 +11,7 @@ license = "MIT"
 exclude = [".travis.yml"]
 
 [dependencies]
+serde = { version = "1.0.70", optional = true }
+
+[dev-dependencies]
+serde_json = "1.0.24"
