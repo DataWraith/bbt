@@ -10,13 +10,22 @@ TrueSkill. It follows `Algorithm 1` from the paper
 
 [ABAMOR]: http://jmlr.csail.mit.edu/papers/volume12/weng11a/weng11a.pdf
 
-## Usage
+## Instructions
 
 Add BBT to your Cargo.toml:
 
 ```toml
 [dependencies]
-bbt = "0.1.0"
+bbt = "0.2.0"
+```
+
+If you want to serialize Ratings with [Serde](https://serde.rs/), you will need
+to add the following to your Cargo.toml instead:
+
+```toml
+[dependencies.bbt]
+version = "0.2.0"
+features = ["serde"]
 ```
 
 See the [Documentation](https://docs.rs/bbt/) for information on how to use the
