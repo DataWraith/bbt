@@ -30,3 +30,10 @@ features = ["serde"]
 
 See the [Documentation](https://docs.rs/bbt/) for information on how to use the
 crate.
+
+## Contributors
+
+Thank you for your contributions!
+
+* [@rakenodiax](https://github.com/rakenodiax) contributed the optional Serde
+  serialization support
