@@ -58,8 +58,8 @@
 //! let p5 = bbt::Rating::default();
 //! let p6 = bbt::Rating::default();
 //!
-//! let new_ratings = rater.update_ratings(&[&[p1], &[p2], &[p3],
-//!                                          &[p4], &[p5], &[p6]],
+//! let new_ratings = rater.update_ratings(&mut[&mut[p1], &mut[p2], &mut[p3],
+//!                                             &mut[p4], &mut[p5], &mut[p6]],
 //!                                        &[1, 2, 3, 4, 5, 6]).unwrap();
 //! ```
 //!
@@ -91,10 +91,10 @@
 //! let gabe    = bbt::Rating::default();
 //! let henry   = bbt::Rating::default();
 //!
-//! let new_ratings = rater.update_ratings(&[&[alice, bob],
-//!                                          &[charlie, dave],
-//!                                          &[eve, fred],
-//!                                          &[gabe, henry]],
+//! let new_ratings = rater.update_ratings(&mut[&mut[alice, bob],
+//!                                             &mut[charlie, dave],
+//!                                             &mut[eve, fred],
+//!                                             &mut[gabe, henry]],
 //!                                        &[1, 2, 2, 4]).unwrap();
 //! ```
 //!
@@ -158,9 +158,9 @@ impl Rater {
     /// the `teams` vector that was passed into the function.
     pub fn update_ratings(
         &mut self,
-        teams: &[&[Rating]],
+        teams: &mut [&mut [Rating]],
         ranks: &[usize],
-    ) -> Result<Vec<Vec<Rating>>, &'static str> {
+    ) -> Result<(), &'static str> {
         if teams.len() != ranks.len() {
             return Err("`teams` and `ranks` vectors must be of the same length");
         }
@@ -227,12 +227,8 @@ impl Rater {
         // Step 3 - Individual skill update ////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////
 
-        let mut result = Vec::with_capacity(teams.len());
-
-        for (team_idx, team) in teams.iter().enumerate() {
-            let mut team_result = Vec::with_capacity(team.len());
-
-            for player in team.iter() {
+        for (team_idx, team) in teams.into_iter().enumerate() {
+            for player in team.iter_mut() {
                 let new_mu =
                     player.mu + (player.sigma_sq / self.team_sigma_sq[team_idx]) * self.team_omega[team_idx];
                 let mut sigma_adj =
@@ -242,17 +238,15 @@ impl Rater {
                 }
                 let new_sigma_sq = player.sigma_sq * sigma_adj;
 
-                team_result.push(Rating {
+                *player = Rating {
                     mu: new_mu,
                     sigma: new_sigma_sq.sqrt(),
                     sigma_sq: new_sigma_sq,
-                });
+                };
             }
-
-            result.push(team_result);
         }
 
-        Ok(result)
+        Ok(())
     }
 
     /// This method calculates the new ratings for two players after a
@@ -260,16 +254,16 @@ impl Rater {
     /// perspective, i.e. `Win` if the first player won, `Loss` if the second
     /// player won and `Draw` if neither player won.
     pub fn duel(&mut self, p1: Rating, p2: Rating, outcome: Outcome) -> (Rating, Rating) {
-        let teams = [&[p1][..], &[p2][..]];
+        let mut teams = [&mut[p1][..], &mut[p2]];
         let ranks = match outcome {
             Outcome::Win => [1, 2],
             Outcome::Loss => [2, 1],
             Outcome::Draw => [1, 1],
         };
 
-        let result = self.update_ratings(&teams, &ranks).unwrap();
+        self.update_ratings(&mut teams, &ranks).unwrap();
 
-        (result[0][0].clone(), result[1][0].clone())
+        (teams[0][0].clone(), teams[1][0].clone())
     }
 }
 
@@ -364,14 +358,13 @@ mod test {
         let p2 = ::Rating::default();
 
         let mut rater = ::Rater::default();
-        let new_rs = rater
-            .update_ratings(&[&[p1][..], &[p2]], &[0, 1])
-            .unwrap();
+        let teams = &mut [&mut [p1][..], &mut[p2]];
+        rater.update_ratings(teams, &[0, 1]).unwrap();
 
-        assert!((new_rs[0][0].mu - 27.63523138).abs() < 1.0 / 100000000.0);
-        assert!((new_rs[0][0].sigma - 8.0655063).abs() < 1.0 / 1000000.0);
-        assert!((new_rs[1][0].mu - 22.36476861).abs() < 1.0 / 100000000.0);
-        assert!((new_rs[1][0].sigma - 8.0655063).abs() < 1.0 / 1000000.0);
+        assert!((teams[0][0].mu - 27.63523138).abs() < 1.0 / 100000000.0);
+        assert!((teams[0][0].sigma - 8.0655063).abs() < 1.0 / 1000000.0);
+        assert!((teams[1][0].mu - 22.36476861).abs() < 1.0 / 100000000.0);
+        assert!((teams[1][0].sigma - 8.0655063).abs() < 1.0 / 1000000.0);
     }
 
     #[test]
@@ -396,19 +389,19 @@ mod test {
         let p4 = ::Rating::default();
 
         let mut rater = ::Rater::default();
-        let teams = &[&[p1][..], &[p2], &[p3][..], &[p4][..]];
+        let teams = &mut [&mut[p1][..], &mut[p2], &mut[p3], &mut[p4]];
         let ranks = [1, 2, 3, 4];
 
-        let new_ratings = rater.update_ratings(teams, &ranks).unwrap();
+        rater.update_ratings(teams, &ranks).unwrap();
 
-        assert!((new_ratings[0][0].mu - 32.9056941).abs() < 1.0 / 10000000.0);
-        assert!((new_ratings[1][0].mu - 27.6352313).abs() < 1.0 / 10000000.0);
-        assert!((new_ratings[2][0].mu - 22.3647686).abs() < 1.0 / 10000000.0);
-        assert!((new_ratings[3][0].mu - 17.0943058).abs() < 1.0 / 10000000.0);
+        assert!((teams[0][0].mu - 32.9056941).abs() < 1.0 / 10000000.0);
+        assert!((teams[1][0].mu - 27.6352313).abs() < 1.0 / 10000000.0);
+        assert!((teams[2][0].mu - 22.3647686).abs() < 1.0 / 10000000.0);
+        assert!((teams[3][0].mu - 17.0943058).abs() < 1.0 / 10000000.0);
 
-        assert!((new_ratings[0][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
-        assert!((new_ratings[1][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
-        assert!((new_ratings[2][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
-        assert!((new_ratings[3][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((teams[0][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((teams[1][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((teams[2][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((teams[3][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
     }
 }
