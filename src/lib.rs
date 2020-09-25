@@ -58,8 +58,8 @@
 //! let p5 = bbt::Rating::default();
 //! let p6 = bbt::Rating::default();
 //!
-//! let new_ratings = rater.update_ratings(vec![vec![p1], vec![p2], vec![p3],
-//!                                             vec![p4], vec![p5], vec![p6]],
+//! let new_ratings = rater.update_ratings(&[&[p1], &[p2], &[p3],
+//!                                          &[p4], &[p5], &[p6]],
 //!                                        &[1, 2, 3, 4, 5, 6]).unwrap();
 //! ```
 //!
@@ -91,10 +91,10 @@
 //! let gabe    = bbt::Rating::default();
 //! let henry   = bbt::Rating::default();
 //!
-//! let new_ratings = rater.update_ratings(vec![vec![alice, bob],
-//!                                             vec![charlie, dave],
-//!                                             vec![eve, fred],
-//!                                             vec![gabe, henry]],
+//! let new_ratings = rater.update_ratings(&[&[alice, bob],
+//!                                          &[charlie, dave],
+//!                                          &[eve, fred],
+//!                                          &[gabe, henry]],
 //!                                        &[1, 2, 2, 4]).unwrap();
 //! ```
 //!
@@ -158,7 +158,7 @@ impl Rater {
     /// the `teams` vector that was passed into the function.
     pub fn update_ratings(
         &mut self,
-        teams: Vec<Vec<Rating>>,
+        teams: &[&[Rating]],
         ranks: &[usize],
     ) -> Result<Vec<Vec<Rating>>, &'static str> {
         if teams.len() != ranks.len() {
@@ -260,14 +260,14 @@ impl Rater {
     /// perspective, i.e. `Win` if the first player won, `Loss` if the second
     /// player won and `Draw` if neither player won.
     pub fn duel(&mut self, p1: Rating, p2: Rating, outcome: Outcome) -> (Rating, Rating) {
-        let teams = vec![vec![p1], vec![p2]];
+        let teams = [&[p1][..], &[p2][..]];
         let ranks = match outcome {
             Outcome::Win => [1, 2],
             Outcome::Loss => [2, 1],
             Outcome::Draw => [1, 1],
         };
 
-        let result = self.update_ratings(teams, &ranks).unwrap();
+        let result = self.update_ratings(&teams, &ranks).unwrap();
 
         (result[0][0].clone(), result[1][0].clone())
     }
@@ -365,7 +365,7 @@ mod test {
 
         let mut rater = ::Rater::default();
         let new_rs = rater
-            .update_ratings(vec![vec![p1], vec![p2]], &[0, 1])
+            .update_ratings(&[&[p1][..], &[p2]], &[0, 1])
             .unwrap();
 
         assert!((new_rs[0][0].mu - 27.63523138).abs() < 1.0 / 100000000.0);
@@ -396,8 +396,8 @@ mod test {
         let p4 = ::Rating::default();
 
         let mut rater = ::Rater::default();
-        let teams = vec![vec![p1], vec![p2], vec![p3], vec![p4]];
-        let ranks = vec![1, 2, 3, 4];
+        let teams = &[&[p1][..], &[p2], &[p3][..], &[p4][..]];
+        let ranks = [1, 2, 3, 4];
 
         let new_ratings = rater.update_ratings(teams, &ranks).unwrap();
 
