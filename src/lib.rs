@@ -25,7 +25,7 @@
 //! p2:
 //!
 //! ```rust
-//! let rater = bbt::Rater::default();
+//! let mut rater = bbt::Rater::default();
 //!
 //! let p1 = bbt::Rating::default();
 //! let p2 = bbt::Rating::default();
@@ -49,7 +49,7 @@
 //! contains no duplicates:
 //!
 //! ```rust
-//! let rater = bbt::Rater::default();
+//! let mut rater = bbt::Rater::default();
 //!
 //! let p1 = bbt::Rating::default();
 //! let p2 = bbt::Rating::default();
@@ -60,7 +60,7 @@
 //!
 //! let new_ratings = rater.update_ratings(vec![vec![p1], vec![p2], vec![p3],
 //!                                             vec![p4], vec![p5], vec![p6]],
-//!                                        vec![1, 2, 3, 4, 5, 6]).unwrap();
+//!                                        &[1, 2, 3, 4, 5, 6]).unwrap();
 //! ```
 //!
 //! In the example, the first player places first, the second player second, and
@@ -80,7 +80,7 @@
 //! can call the `update_ratings` function as follows:
 //!
 //! ```rust
-//! let rater = bbt::Rater::default();
+//! let mut rater = bbt::Rater::default();
 //!
 //! let alice   = bbt::Rating::default();
 //! let bob     = bbt::Rating::default();
@@ -95,7 +95,7 @@
 //!                                             vec![charlie, dave],
 //!                                             vec![eve, fred],
 //!                                             vec![gabe, henry]],
-//!                                        vec![1, 2, 2, 4]).unwrap();
+//!                                        &[1, 2, 2, 4]).unwrap();
 //! ```
 //!
 //! The second vector assigns a rank to the teams given in the first vector.
@@ -122,6 +122,10 @@ use std::fmt;
 /// Rater is used to calculate rating updates given the β-parameter.
 pub struct Rater {
     beta_sq: f64,
+    team_mu: Vec<f64>,
+    team_sigma_sq: Vec<f64>,
+    team_omega: Vec<f64>,
+    team_delta: Vec<f64>,
 }
 
 impl Rater {
@@ -129,6 +133,10 @@ impl Rater {
     pub fn new(beta: f64) -> Rater {
         Rater {
             beta_sq: beta * beta,
+            team_mu: vec![],
+            team_sigma_sq: vec![],
+            team_omega: vec![],
+            team_delta: vec![],
         }
     }
 }
@@ -149,25 +157,22 @@ impl Rater {
     /// `Ok(Vec<Vec<Rating>>)`. The returned vector is an updated version of
     /// the `teams` vector that was passed into the function.
     pub fn update_ratings(
-        &self,
+        &mut self,
         teams: Vec<Vec<Rating>>,
-        ranks: Vec<usize>,
+        ranks: &[usize],
     ) -> Result<Vec<Vec<Rating>>, &'static str> {
         if teams.len() != ranks.len() {
             return Err("`teams` and `ranks` vectors must be of the same length");
         }
-
-        let mut team_mu = Vec::with_capacity(teams.len());
-        let mut team_sigma_sq = Vec::with_capacity(teams.len());
-        let mut team_omega = Vec::with_capacity(teams.len());
-        let mut team_delta = Vec::with_capacity(teams.len());
-
-        for _ in 0..teams.len() {
-            team_mu.push(0.0);
-            team_sigma_sq.push(0.0);
-            team_omega.push(0.0);
-            team_delta.push(0.0);
-        }
+        
+        self.team_mu.clear();
+        self.team_mu.resize(teams.len(), 0.0);
+        self.team_sigma_sq.clear();
+        self.team_sigma_sq.resize(teams.len(), 0.0);
+        self.team_omega.clear();
+        self.team_omega.resize(teams.len(), 0.0);
+        self.team_delta.clear();
+        self.team_delta.resize(teams.len(), 0.0);
 
         ////////////////////////////////////////////////////////////////////////
         // Step 1 - Collect Team skill and variance ////////////////////////////
@@ -179,8 +184,8 @@ impl Rater {
             }
 
             for player in team.iter() {
-                team_mu[team_idx] += player.mu;
-                team_sigma_sq[team_idx] += player.sigma_sq;
+                self.team_mu[team_idx] += player.mu;
+                self.team_sigma_sq[team_idx] += player.sigma_sq;
             }
         }
 
@@ -194,10 +199,10 @@ impl Rater {
                     continue;
                 }
 
-                let c = (team_sigma_sq[team_idx] + team_sigma_sq[team2_idx] + 2.0 * self.beta_sq)
+                let c = (self.team_sigma_sq[team_idx] + self.team_sigma_sq[team2_idx] + 2.0 * self.beta_sq)
                     .sqrt();
-                let e1 = (team_mu[team_idx] / c).exp();
-                let e2 = (team_mu[team2_idx] / c).exp();
+                let e1 = (self.team_mu[team_idx] / c).exp();
+                let e2 = (self.team_mu[team2_idx] / c).exp();
                 let piq = e1 / (e1 + e2);
                 let pqi = e2 / (e1 + e2);
                 let ri = ranks[team_idx];
@@ -209,12 +214,12 @@ impl Rater {
                 } else {
                     0.0
                 };
-                let delta = (team_sigma_sq[team_idx] / c) * (s - piq);
-                let gamma = team_sigma_sq[team_idx].sqrt() / c;
-                let eta = gamma * (team_sigma_sq[team_idx] / (c * c)) * piq * pqi;
+                let delta = (self.team_sigma_sq[team_idx] / c) * (s - piq);
+                let gamma = self.team_sigma_sq[team_idx].sqrt() / c;
+                let eta = gamma * (self.team_sigma_sq[team_idx] / (c * c)) * piq * pqi;
 
-                team_omega[team_idx] += delta;
-                team_delta[team_idx] += eta;
+                self.team_omega[team_idx] += delta;
+                self.team_delta[team_idx] += eta;
             }
         }
 
@@ -229,9 +234,9 @@ impl Rater {
 
             for player in team.iter() {
                 let new_mu =
-                    player.mu + (player.sigma_sq / team_sigma_sq[team_idx]) * team_omega[team_idx];
+                    player.mu + (player.sigma_sq / self.team_sigma_sq[team_idx]) * self.team_omega[team_idx];
                 let mut sigma_adj =
-                    1.0 - (player.sigma_sq / team_sigma_sq[team_idx]) * team_delta[team_idx];
+                    1.0 - (player.sigma_sq / self.team_sigma_sq[team_idx]) * self.team_delta[team_idx];
                 if sigma_adj < 0.0001 {
                     sigma_adj = 0.0001;
                 }
@@ -254,15 +259,15 @@ impl Rater {
     /// head-to-head duel. The outcome is from the first player `p1`'s
     /// perspective, i.e. `Win` if the first player won, `Loss` if the second
     /// player won and `Draw` if neither player won.
-    pub fn duel(&self, p1: Rating, p2: Rating, outcome: Outcome) -> (Rating, Rating) {
+    pub fn duel(&mut self, p1: Rating, p2: Rating, outcome: Outcome) -> (Rating, Rating) {
         let teams = vec![vec![p1], vec![p2]];
         let ranks = match outcome {
-            Outcome::Win => vec![1, 2],
-            Outcome::Loss => vec![2, 1],
-            Outcome::Draw => vec![1, 1],
+            Outcome::Win => [1, 2],
+            Outcome::Loss => [2, 1],
+            Outcome::Draw => [1, 1],
         };
 
-        let result = self.update_ratings(teams, ranks).unwrap();
+        let result = self.update_ratings(teams, &ranks).unwrap();
 
         (result[0][0].clone(), result[1][0].clone())
     }
@@ -358,9 +363,9 @@ mod test {
         let p1 = ::Rating::default();
         let p2 = ::Rating::default();
 
-        let rater = ::Rater::default();
+        let mut rater = ::Rater::default();
         let new_rs = rater
-            .update_ratings(vec![vec![p1], vec![p2]], vec![0, 1])
+            .update_ratings(vec![vec![p1], vec![p2]], &[0, 1])
             .unwrap();
 
         assert!((new_rs[0][0].mu - 27.63523138).abs() < 1.0 / 100000000.0);
@@ -374,7 +379,7 @@ mod test {
         let p1 = ::Rating::default();
         let p2 = ::Rating::default();
 
-        let rater = ::Rater::default();
+        let mut rater = ::Rater::default();
         let (new_p1, new_p2) = rater.duel(p1, p2, ::Outcome::Draw);
 
         assert_eq!(new_p1.mu, 25.0);
@@ -390,11 +395,11 @@ mod test {
         let p3 = ::Rating::default();
         let p4 = ::Rating::default();
 
-        let rater = ::Rater::default();
+        let mut rater = ::Rater::default();
         let teams = vec![vec![p1], vec![p2], vec![p3], vec![p4]];
         let ranks = vec![1, 2, 3, 4];
 
-        let new_ratings = rater.update_ratings(teams, ranks).unwrap();
+        let new_ratings = rater.update_ratings(teams, &ranks).unwrap();
 
         assert!((new_ratings[0][0].mu - 32.9056941).abs() < 1.0 / 10000000.0);
         assert!((new_ratings[1][0].mu - 27.6352313).abs() < 1.0 / 10000000.0);
