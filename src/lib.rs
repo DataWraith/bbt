@@ -91,10 +91,10 @@
 //! let gabe    = bbt::Rating::default();
 //! let henry   = bbt::Rating::default();
 //!
-//! let new_ratings = rater.update_ratings(&mut[&mut[alice, bob],
-//!                                             &mut[charlie, dave],
-//!                                             &mut[eve, fred],
-//!                                             &mut[gabe, henry]],
+//! let new_ratings = rater.update_ratings(&mut[vec![alice, bob],
+//!                                             vec![charlie, dave],
+//!                                             vec![eve, fred],
+//!                                             vec![gabe, henry]],
 //!                                        &[1, 2, 2, 4]).unwrap();
 //! ```
 //!
@@ -118,6 +118,16 @@ extern crate serde;
 mod serialization;
 
 use std::fmt;
+
+/// Error value explaining what happened when the [`update_ratings`]
+/// method fails.
+#[derive(Debug)]
+pub enum RatingUpdateError {
+    /// Supplied teams and rank vectors weren't the same length.
+    InputVectorsDifferentLength,
+    /// Team with given index is empty.
+    EmptyTeam(usize),
+}
 
 /// Rater is used to calculate rating updates given the β-parameter.
 pub struct Rater {
@@ -150,23 +160,23 @@ impl Default for Rater {
 }
 
 impl Rater {
-    /// This method takes a vector of teams, with each team being a vector of
-    /// player ratings, and a vector ranks of the same size that specifies the
-    /// order in which the team finished a game. It returns either
-    /// `Err(error_message)` if the input is incorrect or
-    /// `Ok(Vec<Vec<Rating>>)`. The returned vector is an updated version of
-    /// the `teams` vector that was passed into the function.
+    /// This method takes a slice of teams, with each team being a vector or
+    /// slice of player ratings, and a slice contains ranks of the same size
+    /// that specifies the order in which the team finished a game. It returns
+    /// either `Err(RatingUpdateError)` if the input is incorrect or
+    /// `Ok(())` on success. The new ratings are updated in place for performance
+    /// reasons.
     pub fn update_ratings<T>(
         &mut self,
         teams: &mut [T],
         ranks: &[usize],
-    ) -> Result<(), &'static str>
+    ) -> Result<(), RatingUpdateError>
     where
         T: std::convert::AsMut<[Rating]>,
     {
         let teams_len = teams.len();
         if teams_len != ranks.len() {
-            return Err("`teams` and `ranks` vectors must be of the same length");
+            return Err(RatingUpdateError::InputVectorsDifferentLength);
         }
         
         self.team_mu.clear();
@@ -184,7 +194,7 @@ impl Rater {
 
         for (team_idx, team) in teams.iter_mut().enumerate() {
             if team.as_mut().is_empty() {
-                return Err("At least one of the teams contains no players");
+                return Err(RatingUpdateError::EmptyTeam(team_idx));
             }
 
             for player in team.as_mut().iter() {
@@ -267,7 +277,7 @@ impl Rater {
 
         self.update_ratings(&mut teams, &ranks).unwrap();
 
-        (teams[0][0].clone(), teams[1][0].clone())
+        (teams[0][0], teams[1][0])
     }
 }
 
