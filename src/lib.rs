@@ -156,34 +156,38 @@ impl Rater {
     /// `Err(error_message)` if the input is incorrect or
     /// `Ok(Vec<Vec<Rating>>)`. The returned vector is an updated version of
     /// the `teams` vector that was passed into the function.
-    pub fn update_ratings(
+    pub fn update_ratings<T>(
         &mut self,
-        teams: &mut [&mut [Rating]],
+        teams: &mut [T],
         ranks: &[usize],
-    ) -> Result<(), &'static str> {
-        if teams.len() != ranks.len() {
+    ) -> Result<(), &'static str>
+    where
+        T: std::convert::AsMut<[Rating]>,
+    {
+        let teams_len = teams.len();
+        if teams_len != ranks.len() {
             return Err("`teams` and `ranks` vectors must be of the same length");
         }
         
         self.team_mu.clear();
-        self.team_mu.resize(teams.len(), 0.0);
+        self.team_mu.resize(teams_len, 0.0);
         self.team_sigma_sq.clear();
-        self.team_sigma_sq.resize(teams.len(), 0.0);
+        self.team_sigma_sq.resize(teams_len, 0.0);
         self.team_omega.clear();
-        self.team_omega.resize(teams.len(), 0.0);
+        self.team_omega.resize(teams_len, 0.0);
         self.team_delta.clear();
-        self.team_delta.resize(teams.len(), 0.0);
+        self.team_delta.resize(teams_len, 0.0);
 
         ////////////////////////////////////////////////////////////////////////
         // Step 1 - Collect Team skill and variance ////////////////////////////
         ////////////////////////////////////////////////////////////////////////
 
-        for (team_idx, team) in teams.iter().enumerate() {
-            if team.is_empty() {
+        for (team_idx, team) in teams.iter_mut().enumerate() {
+            if team.as_mut().is_empty() {
                 return Err("At least one of the teams contains no players");
             }
 
-            for player in team.iter() {
+            for player in team.as_mut().iter() {
                 self.team_mu[team_idx] += player.mu;
                 self.team_sigma_sq[team_idx] += player.sigma_sq;
             }
@@ -193,8 +197,8 @@ impl Rater {
         // Step 2 - Compute Team Omega and Delta ///////////////////////////////
         ////////////////////////////////////////////////////////////////////////
 
-        for (team_idx, _) in teams.iter().enumerate() {
-            for (team2_idx, _) in teams.iter().enumerate() {
+        for team_idx in 0..teams_len {
+            for team2_idx in 0..teams_len {
                 if team_idx == team2_idx {
                     continue;
                 }
@@ -228,7 +232,7 @@ impl Rater {
         ////////////////////////////////////////////////////////////////////////
 
         for (team_idx, team) in teams.into_iter().enumerate() {
-            for player in team.iter_mut() {
+            for player in team.as_mut().iter_mut() {
                 let new_mu =
                     player.mu + (player.sigma_sq / self.team_sigma_sq[team_idx]) * self.team_omega[team_idx];
                 let mut sigma_adj =
@@ -281,7 +285,7 @@ pub enum Outcome {
 }
 
 /// Rating represents the skill of a player.
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 pub struct Rating {
     mu: f64,
     sigma: f64,
