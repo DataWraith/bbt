@@ -38,9 +38,9 @@
 //! ### Multiplayer games
 //!
 //! Games with more than two players will have to use the general
-//! `update_ratings` method. It takes a vector of teams and a vector of ranks,
+//! `update_ratings` method. It takes a slice of teams and a slice of ranks,
 //! with each team being a vector of player ratings. If no error occurs, the
-//! method returns a vector of the same form as the input with updated ratings.
+//! method updates the ratings in place.
 //!
 //! #### Example 1: Racing Game
 //!
@@ -98,7 +98,7 @@
 //!                                        &[1, 2, 2, 4]).unwrap();
 //! ```
 //!
-//! The second vector assigns a rank to the teams given in the first vector.
+//! The second slice assigns a rank to the teams given in the first slice.
 //! Team 1 placed first, teams 2 and 3 tie for second place and team 4 comes in
 //! fourth.
 //!
@@ -123,8 +123,8 @@ use std::fmt;
 /// method fails.
 #[derive(Debug)]
 pub enum RatingUpdateError {
-    /// Supplied teams and rank vectors weren't the same length.
-    InputVectorsDifferentLength,
+    /// Supplied teams and rank slices weren't the same length.
+    InputSlicesDifferentLength,
     /// Team with given index is empty.
     EmptyTeam(usize),
 }
@@ -176,7 +176,7 @@ impl Rater {
     {
         let teams_len = teams.len();
         if teams_len != ranks.len() {
-            return Err(RatingUpdateError::InputVectorsDifferentLength);
+            return Err(RatingUpdateError::InputSlicesDifferentLength);
         }
         
         self.team_mu.clear();
