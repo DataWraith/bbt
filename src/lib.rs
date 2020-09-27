@@ -129,13 +129,18 @@ pub enum RatingUpdateError {
     EmptyTeam(usize),
 }
 
+#[derive(Default)]
+struct TeamParams {
+    mu: f64,
+    sigma_sq: f64,
+    omega: f64,
+    delta: f64,
+}
+
 /// Rater is used to calculate rating updates given the β-parameter.
 pub struct Rater {
     beta_sq: f64,
-    team_mu: Vec<f64>,
-    team_sigma_sq: Vec<f64>,
-    team_omega: Vec<f64>,
-    team_delta: Vec<f64>,
+    team_params: Vec<TeamParams>,
 }
 
 impl Rater {
@@ -143,10 +148,7 @@ impl Rater {
     pub fn new(beta: f64) -> Rater {
         Rater {
             beta_sq: beta * beta,
-            team_mu: vec![],
-            team_sigma_sq: vec![],
-            team_omega: vec![],
-            team_delta: vec![],
+            team_params: vec![],
         }
     }
 }
@@ -179,14 +181,8 @@ impl Rater {
             return Err(RatingUpdateError::InputSlicesDifferentLength);
         }
         
-        self.team_mu.clear();
-        self.team_mu.resize(teams_len, 0.0);
-        self.team_sigma_sq.clear();
-        self.team_sigma_sq.resize(teams_len, 0.0);
-        self.team_omega.clear();
-        self.team_omega.resize(teams_len, 0.0);
-        self.team_delta.clear();
-        self.team_delta.resize(teams_len, 0.0);
+        self.team_params.clear();
+        self.team_params.resize_with(teams_len, Default::default);
 
         ////////////////////////////////////////////////////////////////////////
         // Step 1 - Collect Team skill and variance ////////////////////////////
@@ -197,9 +193,9 @@ impl Rater {
                 return Err(RatingUpdateError::EmptyTeam(team_idx));
             }
 
-            for player in team.as_mut().iter() {
-                self.team_mu[team_idx] += player.mu;
-                self.team_sigma_sq[team_idx] += player.sigma_sq;
+            for player in team.as_mut() {
+                self.team_params[team_idx].mu += player.mu;
+                self.team_params[team_idx].sigma_sq += player.sigma_sq;
             }
         }
 
@@ -213,10 +209,10 @@ impl Rater {
                     continue;
                 }
 
-                let c = (self.team_sigma_sq[team_idx] + self.team_sigma_sq[team2_idx] + 2.0 * self.beta_sq)
+                let c = (self.team_params[team_idx].sigma_sq + self.team_params[team2_idx].sigma_sq + 2.0 * self.beta_sq)
                     .sqrt();
-                let e1 = (self.team_mu[team_idx] / c).exp();
-                let e2 = (self.team_mu[team2_idx] / c).exp();
+                let e1 = (self.team_params[team_idx].mu / c).exp();
+                let e2 = (self.team_params[team2_idx].mu / c).exp();
                 let piq = e1 / (e1 + e2);
                 let pqi = e2 / (e1 + e2);
                 let ri = ranks[team_idx];
@@ -228,12 +224,12 @@ impl Rater {
                 } else {
                     0.0
                 };
-                let delta = (self.team_sigma_sq[team_idx] / c) * (s - piq);
-                let gamma = self.team_sigma_sq[team_idx].sqrt() / c;
-                let eta = gamma * (self.team_sigma_sq[team_idx] / (c * c)) * piq * pqi;
+                let delta = (self.team_params[team_idx].sigma_sq / c) * (s - piq);
+                let gamma = self.team_params[team_idx].sigma_sq.sqrt() / c;
+                let eta = gamma * (self.team_params[team_idx].sigma_sq / (c * c)) * piq * pqi;
 
-                self.team_omega[team_idx] += delta;
-                self.team_delta[team_idx] += eta;
+                self.team_params[team_idx].omega += delta;
+                self.team_params[team_idx].delta += eta;
             }
         }
 
@@ -243,20 +239,15 @@ impl Rater {
 
         for (team_idx, team) in teams.into_iter().enumerate() {
             for player in team.as_mut().iter_mut() {
-                let new_mu =
-                    player.mu + (player.sigma_sq / self.team_sigma_sq[team_idx]) * self.team_omega[team_idx];
                 let mut sigma_adj =
-                    1.0 - (player.sigma_sq / self.team_sigma_sq[team_idx]) * self.team_delta[team_idx];
+                    1.0 - (player.sigma_sq / self.team_params[team_idx].sigma_sq) * self.team_params[team_idx].delta;
                 if sigma_adj < 0.0001 {
                     sigma_adj = 0.0001;
                 }
-                let new_sigma_sq = player.sigma_sq * sigma_adj;
-
-                *player = Rating {
-                    mu: new_mu,
-                    sigma: new_sigma_sq.sqrt(),
-                    sigma_sq: new_sigma_sq,
-                };
+                player.mu +=
+                    (player.sigma_sq / self.team_params[team_idx].sigma_sq) * self.team_params[team_idx].omega;
+                player.sigma_sq *= player.sigma_sq * sigma_adj;
+                player.sigma = player.sigma_sq.sqrt();
             }
         }
 
