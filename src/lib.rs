@@ -180,7 +180,7 @@ impl Rater {
         if teams_len != ranks.len() {
             return Err(RatingUpdateError::InputSlicesDifferentLength);
         }
-        
+
         self.team_params.clear();
         self.team_params.resize_with(teams_len, Default::default);
 
@@ -209,7 +209,9 @@ impl Rater {
                     continue;
                 }
 
-                let c = (self.team_params[team_idx].sigma_sq + self.team_params[team2_idx].sigma_sq + 2.0 * self.beta_sq)
+                let c = (self.team_params[team_idx].sigma_sq
+                    + self.team_params[team2_idx].sigma_sq
+                    + 2.0 * self.beta_sq)
                     .sqrt();
                 let e1 = (self.team_params[team_idx].mu / c).exp();
                 let e2 = (self.team_params[team2_idx].mu / c).exp();
@@ -239,14 +241,15 @@ impl Rater {
 
         for (team_idx, team) in teams.into_iter().enumerate() {
             for player in team.as_mut().iter_mut() {
-                let mut sigma_adj =
-                    1.0 - (player.sigma_sq / self.team_params[team_idx].sigma_sq) * self.team_params[team_idx].delta;
+                let mut sigma_adj = 1.0
+                    - (player.sigma_sq / self.team_params[team_idx].sigma_sq)
+                        * self.team_params[team_idx].delta;
                 if sigma_adj < 0.0001 {
                     sigma_adj = 0.0001;
                 }
-                player.mu +=
-                    (player.sigma_sq / self.team_params[team_idx].sigma_sq) * self.team_params[team_idx].omega;
-                player.sigma_sq *= player.sigma_sq * sigma_adj;
+                player.mu += (player.sigma_sq / self.team_params[team_idx].sigma_sq)
+                    * self.team_params[team_idx].omega;
+                player.sigma_sq *= sigma_adj;
                 player.sigma = player.sigma_sq.sqrt();
             }
         }
@@ -259,7 +262,7 @@ impl Rater {
     /// perspective, i.e. `Win` if the first player won, `Loss` if the second
     /// player won and `Draw` if neither player won.
     pub fn duel(&mut self, p1: Rating, p2: Rating, outcome: Outcome) -> (Rating, Rating) {
-        let mut teams = [&mut[p1][..], &mut[p2]];
+        let mut teams = [&mut [p1][..], &mut [p2]];
         let ranks = match outcome {
             Outcome::Win => [1, 2],
             Outcome::Loss => [2, 1],
@@ -363,7 +366,7 @@ mod test {
         let p2 = ::Rating::default();
 
         let mut rater = ::Rater::default();
-        let teams = &mut [&mut [p1][..], &mut[p2]];
+        let teams = &mut [&mut [p1][..], &mut [p2]];
         rater.update_ratings(teams, &[0, 1]).unwrap();
 
         assert!((teams[0][0].mu - 27.63523138).abs() < 1.0 / 100000000.0);
@@ -394,7 +397,7 @@ mod test {
         let p4 = ::Rating::default();
 
         let mut rater = ::Rater::default();
-        let teams = &mut [&mut[p1][..], &mut[p2], &mut[p3], &mut[p4]];
+        let teams = &mut [&mut [p1][..], &mut [p2], &mut [p3], &mut [p4]];
         let ranks = [1, 2, 3, 4];
 
         rater.update_ratings(teams, &ranks).unwrap();

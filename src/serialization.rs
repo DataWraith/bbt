@@ -69,9 +69,11 @@ impl<'de> Deserialize<'de> for Rating {
             where
                 V: SeqAccess<'de>,
             {
-                let mu = seq.next_element()?
+                let mu = seq
+                    .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
-                let sigma = seq.next_element()?
+                let sigma = seq
+                    .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(1, &self))?;
                 Ok(Rating::new(mu, sigma))
             }
