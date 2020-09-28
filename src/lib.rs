@@ -216,15 +216,11 @@ impl Rater {
                 let e1 = (self.team_params[team_idx].mu / c).exp();
                 let e2 = (self.team_params[team2_idx].mu / c).exp();
                 let piq = e1 / (e1 + e2);
-                let pqi = e2 / (e1 + e2);
-                let ri = ranks[team_idx];
-                let rq = ranks[team2_idx];
-                let s = if rq > ri {
-                    1.0
-                } else if rq == ri {
-                    0.5
-                } else {
-                    0.0
+                let pqi = 1.0 - piq;
+                let s = match ranks[team2_idx].cmp(&ranks[team_idx]) {
+                    std::cmp::Ordering::Greater => 1.0,
+                    std::cmp::Ordering::Equal => 0.5,
+                    std::cmp::Ordering::Less => 0.0,
                 };
                 let delta = (self.team_params[team_idx].sigma_sq / c) * (s - piq);
                 let gamma = self.team_params[team_idx].sigma_sq.sqrt() / c;
