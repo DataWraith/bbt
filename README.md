@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/DataWraith/bbt.svg?branch=master)](https://travis-ci.org/DataWraith/bbt)
-
 **Status**: I consider this project done. If you need something to change,
 please open an issue for discussion before submitting a pull request.
 
