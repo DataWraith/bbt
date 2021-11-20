@@ -117,8 +117,8 @@ extern crate serde;
 #[cfg(feature = "serde")]
 mod serialization;
 
-use std::fmt;
 use std::cmp::Ordering;
+use std::fmt;
 
 /// Rater is used to calculate rating updates given the β-parameter.
 pub struct Rater {

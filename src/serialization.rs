@@ -1,7 +1,9 @@
+use std::fmt;
+
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
-use std::fmt;
+
 use Rating;
 
 impl Serialize for Rating {
@@ -24,7 +26,7 @@ impl<'de> Deserialize<'de> for Rating {
         enum Field {
             Mu,
             Sigma,
-        };
+        }
 
         impl<'de> Deserialize<'de> for Field {
             fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
@@ -69,9 +71,11 @@ impl<'de> Deserialize<'de> for Rating {
             where
                 V: SeqAccess<'de>,
             {
-                let mu = seq.next_element()?
+                let mu = seq
+                    .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
-                let sigma = seq.next_element()?
+                let sigma = seq
+                    .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(1, &self))?;
                 Ok(Rating::new(mu, sigma))
             }
