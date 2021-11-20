@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/DataWraith/bbt.svg?branch=master)](https://travis-ci.org/DataWraith/bbt)
 
-**Status**: In maintenance mode. I will address Issues and Pull requests, but have no plans to add new features.
+**Status**: I consider this project done. If you need something to change,
+please open an issue for discussion before submitting a pull request.
 
 # BBT
 
