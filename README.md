@@ -17,16 +17,15 @@ Add BBT to your Cargo.toml:
 
 ```toml
 [dependencies]
-bbt = "0.2.0"
+bbt = "0.2"
 ```
 
 If you want to serialize Ratings with [Serde](https://serde.rs/), you will need
 to add the following to your Cargo.toml instead:
 
 ```toml
-[dependencies.bbt]
-version = "0.2.0"
-features = ["serde"]
+[dependencies]
+bbt = { version = "0.2", features = ["serde"] }
 ```
 
 See the [Documentation](https://docs.rs/bbt/) for information on how to use the
