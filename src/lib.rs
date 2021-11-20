@@ -118,6 +118,7 @@ extern crate serde;
 mod serialization;
 
 use std::fmt;
+use std::cmp::Ordering;
 
 /// Rater is used to calculate rating updates given the β-parameter.
 pub struct Rater {
@@ -157,17 +158,10 @@ impl Rater {
             return Err("`teams` and `ranks` vectors must be of the same length");
         }
 
-        let mut team_mu = Vec::with_capacity(teams.len());
-        let mut team_sigma_sq = Vec::with_capacity(teams.len());
-        let mut team_omega = Vec::with_capacity(teams.len());
-        let mut team_delta = Vec::with_capacity(teams.len());
-
-        for _ in 0..teams.len() {
-            team_mu.push(0.0);
-            team_sigma_sq.push(0.0);
-            team_omega.push(0.0);
-            team_delta.push(0.0);
-        }
+        let mut team_mu = vec![0.0; teams.len()];
+        let mut team_sigma_sq = vec![0.0; teams.len()];
+        let mut team_omega = vec![0.0; teams.len()];
+        let mut team_delta = vec![0.0; teams.len()];
 
         ////////////////////////////////////////////////////////////////////////
         // Step 1 - Collect Team skill and variance ////////////////////////////
@@ -188,8 +182,8 @@ impl Rater {
         // Step 2 - Compute Team Omega and Delta ///////////////////////////////
         ////////////////////////////////////////////////////////////////////////
 
-        for (team_idx, _) in teams.iter().enumerate() {
-            for (team2_idx, _) in teams.iter().enumerate() {
+        for team_idx in 0..teams.len() {
+            for team2_idx in 0..teams.len() {
                 if team_idx == team2_idx {
                     continue;
                 }
@@ -202,13 +196,13 @@ impl Rater {
                 let pqi = e2 / (e1 + e2);
                 let ri = ranks[team_idx];
                 let rq = ranks[team2_idx];
-                let s = if rq > ri {
-                    1.0
-                } else if rq == ri {
-                    0.5
-                } else {
-                    0.0
+
+                let s = match rq.cmp(&ri) {
+                    Ordering::Greater => 1.0,
+                    Ordering::Equal => 0.5,
+                    Ordering::Less => 0.0,
                 };
+
                 let delta = (team_sigma_sq[team_idx] / c) * (s - piq);
                 let gamma = team_sigma_sq[team_idx].sqrt() / c;
                 let eta = gamma * (team_sigma_sq[team_idx] / (c * c)) * piq * pqi;
@@ -230,11 +224,14 @@ impl Rater {
             for player in team.iter() {
                 let new_mu =
                     player.mu + (player.sigma_sq / team_sigma_sq[team_idx]) * team_omega[team_idx];
+
                 let mut sigma_adj =
                     1.0 - (player.sigma_sq / team_sigma_sq[team_idx]) * team_delta[team_idx];
+
                 if sigma_adj < 0.0001 {
                     sigma_adj = 0.0001;
                 }
+
                 let new_sigma_sq = player.sigma_sq * sigma_adj;
 
                 team_result.push(Rating {
@@ -345,11 +342,13 @@ impl Rating {
 
 #[cfg(test)]
 mod test {
+    use super::*;
 
     #[test]
     fn can_instantiate_ratings() {
-        let default_rating = ::Rating::default();
-        let new_rating = ::Rating::new(25.0, 25.0 / 3.0);
+        let default_rating = Rating::default();
+        let new_rating = Rating::new(25.0, 25.0 / 3.0);
+
         assert_eq!(default_rating, new_rating)
     }
 
@@ -371,11 +370,11 @@ mod test {
 
     #[test]
     fn two_player_duel_tie() {
-        let p1 = ::Rating::default();
-        let p2 = ::Rating::default();
+        let p1 = Rating::default();
+        let p2 = Rating::default();
 
-        let rater = ::Rater::default();
-        let (new_p1, new_p2) = rater.duel(p1, p2, ::Outcome::Draw);
+        let rater = Rater::default();
+        let (new_p1, new_p2) = rater.duel(p1, p2, Outcome::Draw);
 
         assert_eq!(new_p1.mu, 25.0);
         assert_eq!(new_p2.mu, 25.0);
@@ -385,12 +384,12 @@ mod test {
 
     #[test]
     fn four_player_race() {
-        let p1 = ::Rating::default();
-        let p2 = ::Rating::default();
-        let p3 = ::Rating::default();
-        let p4 = ::Rating::default();
+        let p1 = Rating::default();
+        let p2 = Rating::default();
+        let p3 = Rating::default();
+        let p4 = Rating::default();
 
-        let rater = ::Rater::default();
+        let rater = Rater::default();
         let teams = vec![vec![p1], vec![p2], vec![p3], vec![p4]];
         let ranks = vec![1, 2, 3, 4];
 
