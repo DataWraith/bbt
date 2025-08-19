@@ -112,12 +112,13 @@
 //! `Rater::new(1500.0/6.0)`.
 
 #[cfg(feature = "serde")]
-mod serialization;
+use serde::{Deserialize, Serialize};
 
 use std::cmp::Ordering;
 use std::fmt;
 
 /// Rater is used to calculate rating updates given the β-parameter.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Rater {
     beta_sq: f64,
 }
@@ -171,7 +172,7 @@ impl Rater {
 
             for player in team.iter() {
                 team_mu[team_idx] += player.mu;
-                team_sigma_sq[team_idx] += player.sigma_sq;
+                team_sigma_sq[team_idx] += player.sigma_sq();
             }
         }
 
@@ -219,22 +220,21 @@ impl Rater {
             let mut team_result = Vec::with_capacity(team.len());
 
             for player in team.iter() {
-                let new_mu =
-                    player.mu + (player.sigma_sq / team_sigma_sq[team_idx]) * team_omega[team_idx];
+                let new_mu = player.mu
+                    + (player.sigma_sq() / team_sigma_sq[team_idx]) * team_omega[team_idx];
 
                 let mut sigma_adj =
-                    1.0 - (player.sigma_sq / team_sigma_sq[team_idx]) * team_delta[team_idx];
+                    1.0 - (player.sigma_sq() / team_sigma_sq[team_idx]) * team_delta[team_idx];
 
                 if sigma_adj < 0.0001 {
                     sigma_adj = 0.0001;
                 }
 
-                let new_sigma_sq = player.sigma_sq * sigma_adj;
+                let new_sigma_sq = player.sigma_sq() * sigma_adj;
 
                 team_result.push(Rating {
                     mu: new_mu,
                     sigma: new_sigma_sq.sqrt(),
-                    sigma_sq: new_sigma_sq,
                 });
             }
 
@@ -264,6 +264,7 @@ impl Rater {
 
 /// Outcome represents the outcome of a head-to-head duel between two players.
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Outcome {
     /// The first player won the game
     Win,
@@ -277,10 +278,10 @@ pub enum Outcome {
 
 /// Rating represents the skill of a player.
 #[derive(PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Rating {
     mu: f64,
     sigma: f64,
-    sigma_sq: f64,
 }
 
 impl Default for Rating {
@@ -289,7 +290,6 @@ impl Default for Rating {
         Rating {
             mu: 25.0,
             sigma: 25.0 / 3.0,
-            sigma_sq: f64::powf(25.0 / 3.0, 2.0),
         }
     }
 }
@@ -319,11 +319,7 @@ impl fmt::Debug for Rating {
 
 impl Rating {
     pub fn new(mu: f64, sigma: f64) -> Rating {
-        Rating {
-            mu,
-            sigma,
-            sigma_sq: sigma.powf(2.0),
-        }
+        Rating { mu, sigma }
     }
 
     /// Returns the estimated skill of the player.
@@ -334,6 +330,10 @@ impl Rating {
     /// Returns the variance on the estimate of the player's skill.
     pub fn sigma(&self) -> f64 {
         self.sigma
+    }
+
+    fn sigma_sq(&self) -> f64 {
+        self.sigma.powf(2.0)
     }
 }
 
