@@ -391,6 +391,51 @@ mod test {
         // Conservative estimate would be negative, so should show 0
         assert_eq!(display_str, "0");
     }
+
+    // Rating calculation tests
+    #[test]
+    fn duel_win() {
+        let rater = Rater::default();
+        let p1 = Rating::default();
+        let p2 = Rating::default();
+
+        let (new_p1, new_p2) = rater.duel(p1, p2, Outcome::Win);
+
+        assert!(new_p1.mu > p1.mu);
+        assert!(new_p2.mu < p2.mu);
+        assert!(new_p1.sigma < p1.sigma);
+        assert!(new_p2.sigma < p2.sigma);
+    }
+
+    #[test]
+    fn duel_loss() {
+        let rater = Rater::default();
+        let p1 = Rating::default();
+        let p2 = Rating::default();
+
+        let (new_p1, new_p2) = rater.duel(p1, p2, Outcome::Loss);
+
+        assert!(new_p1.mu < p1.mu);
+        assert!(new_p2.mu > p2.mu);
+        assert!(new_p1.sigma < p1.sigma);
+        assert!(new_p2.sigma < p2.sigma);
+    }
+
+    #[test]
+    fn duel_tie() {
+        let p1 = Rating::default();
+        let p2 = Rating::default();
+
+        let rater = Rater::default();
+        let (new_p1, new_p2) = rater.duel(p1, p2, Outcome::Draw);
+
+        assert_eq!(new_p1.mu, 25.0);
+        assert_eq!(new_p2.mu, 25.0);
+        assert!((new_p1.sigma - 8.0655063).abs() < 1.0 / 1000000.0);
+        assert!((new_p2.sigma - 8.0655063).abs() < 1.0 / 1000000.0);
+    }
+
+    #[test]
     fn two_player_duel_win_loss() {
         let p1 = Rating::default();
         let p2 = Rating::default();
@@ -404,20 +449,6 @@ mod test {
         assert!((new_rs[0][0].sigma - 8.0655063).abs() < 1.0 / 1000000.0);
         assert!((new_rs[1][0].mu - 22.36476861).abs() < 1.0 / 100000000.0);
         assert!((new_rs[1][0].sigma - 8.0655063).abs() < 1.0 / 1000000.0);
-    }
-
-    #[test]
-    fn two_player_duel_tie() {
-        let p1 = Rating::default();
-        let p2 = Rating::default();
-
-        let rater = Rater::default();
-        let (new_p1, new_p2) = rater.duel(p1, p2, Outcome::Draw);
-
-        assert_eq!(new_p1.mu, 25.0);
-        assert_eq!(new_p2.mu, 25.0);
-        assert!((new_p1.sigma - 8.0655063).abs() < 1.0 / 1000000.0);
-        assert!((new_p2.sigma - 8.0655063).abs() < 1.0 / 1000000.0);
     }
 
     #[test]
