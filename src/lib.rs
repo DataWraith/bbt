@@ -112,9 +112,6 @@
 //! `Rater::new(1500.0/6.0)`.
 
 #[cfg(feature = "serde")]
-extern crate serde;
-
-#[cfg(feature = "serde")]
 mod serialization;
 
 use std::cmp::Ordering;
@@ -342,7 +339,7 @@ impl Rating {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use crate::{Outcome, Rater, Rating};
 
     #[test]
     fn can_instantiate_ratings() {
@@ -354,10 +351,10 @@ mod test {
 
     #[test]
     fn two_player_duel_win_loss() {
-        let p1 = ::Rating::default();
-        let p2 = ::Rating::default();
+        let p1 = Rating::default();
+        let p2 = Rating::default();
 
-        let rater = ::Rater::default();
+        let rater = Rater::default();
         let new_rs = rater
             .update_ratings(vec![vec![p1], vec![p2]], vec![0, 1])
             .unwrap();

@@ -1,6 +1,7 @@
 [package]
 name = "bbt"
 version = "0.2.0"
+edition = "2024"
 authors = ["Johannes Holzfuß <johannes@holzfuss.name>"]
 description = "A skill-rating system similar to Elo, Glicko or TrueSkill"
 repository = "https://github.com/DataWraith/bbt"

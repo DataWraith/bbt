@@ -4,7 +4,7 @@ use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 
-use Rating;
+use crate::Rating;
 
 impl Serialize for Rating {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
