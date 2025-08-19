@@ -141,6 +141,12 @@ impl Default for Rater {
     }
 }
 
+impl std::fmt::Display for Rater {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Rater(β={:.4})", self.beta_sq.sqrt())
+    }
+}
+
 impl Rater {
     /// This method takes a vector of teams, with each team being a vector of
     /// player ratings, and a vector ranks of the same size that specifies the
