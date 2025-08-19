@@ -353,6 +353,7 @@ mod test {
         assert!(display_str.contains("Rater(β=4.0000)"));
     }
 
+    // Tests for Rating struct
     #[test]
     fn can_instantiate_ratings() {
         let default_rating = Rating::default();
@@ -362,6 +363,34 @@ mod test {
     }
 
     #[test]
+    fn rating_getters() {
+        let rating = Rating::default();
+        assert_eq!(rating.mu(), 25.0);
+        assert_eq!(rating.sigma(), 25.0 / 3.0);
+    }
+
+    #[test]
+    fn rating_display() {
+        let rating = Rating::new(25.0, 8.0);
+        let display_str = format!("{}", rating);
+        // Conservative estimate should be max(0.0, mu - 3*sigma) = max(0.0, 25 - 24) = 1
+        assert_eq!(display_str, "1");
+    }
+
+    #[test]
+    fn rating_debug() {
+        let rating = Rating::new(25.0, 8.0);
+        let debug_str = format!("{:?}", rating);
+        assert_eq!(debug_str, "25±24");
+    }
+
+    #[test]
+    fn rating_display_negative_conservative_estimate() {
+        let rating = Rating::new(5.0, 8.0);
+        let display_str = format!("{}", rating);
+        // Conservative estimate would be negative, so should show 0
+        assert_eq!(display_str, "0");
+    }
     fn two_player_duel_win_loss() {
         let p1 = Rating::default();
         let p2 = Rating::default();
