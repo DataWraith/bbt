@@ -33,5 +33,5 @@ crate.
 
 Thank you for your contributions!
 
-* [@rakenodiax](https://github.com/rakenodiax) contributed the optional Serde
+- [@rakenodiax](https://github.com/rakenodiax) contributed the initial Serde
   serialization support
