@@ -344,6 +344,15 @@ impl Rating {
 mod test {
     use crate::{Outcome, Rater, Rating};
 
+    // Tests for Rater struct
+    #[test]
+    fn rater_display() {
+        let beta = 4.0;
+        let rater = Rater::new(beta);
+        let display_str = format!("{}", rater);
+        assert!(display_str.contains("Rater(β=4.0000)"));
+    }
+
     #[test]
     fn can_instantiate_ratings() {
         let default_rating = Rating::default();
