@@ -259,7 +259,7 @@ impl Rater {
 
         let result = self.update_ratings(teams, ranks).unwrap();
 
-        (result[0][0].clone(), result[1][0].clone())
+        (result[0][0], result[1][0])
     }
 }
 
@@ -278,7 +278,7 @@ pub enum Outcome {
 }
 
 /// Rating represents the skill of a player.
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Rating {
     mu: f64,
