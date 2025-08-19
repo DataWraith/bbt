@@ -303,12 +303,8 @@ impl PartialOrd for Rating {
 
 impl fmt::Display for Rating {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let cons_est = self.mu - 3.0 * self.sigma;
-        if cons_est < 0.0 {
-            write!(f, "0.0")
-        } else {
-            write!(f, "{}", cons_est)
-        }
+        let conservative_estimate = self.mu - 3.0 * self.sigma;
+        write!(f, "{}", conservative_estimate.max(0.0))
     }
 }
 
