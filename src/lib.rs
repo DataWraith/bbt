@@ -480,6 +480,23 @@ mod test {
         assert!((new_ratings[3][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
     }
 
+    #[test]
+    fn uneven_teams() {
+        let p1 = Rating::default();
+        let p2 = Rating::default();
+        let p3 = Rating::default();
+
+        let rater = Rater::default();
+        let teams = vec![vec![p1], vec![p2, p3]];
+        let ranks = vec![1, 2];
+
+        let new_ratings = rater.update_ratings(teams, ranks).unwrap();
+
+        assert!(new_ratings[0][0].mu > new_ratings[1][0].mu);
+        assert!(new_ratings[0][0].mu > new_ratings[1][1].mu);
+        assert!(new_ratings[1][0].mu == new_ratings[1][1].mu);
+    }
+
     // Error handling tests
     #[test]
     fn update_ratings_mismatched_lengths() {
