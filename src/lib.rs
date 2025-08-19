@@ -303,14 +303,14 @@ impl Default for Rating {
 
 impl PartialOrd for Rating {
     fn partial_cmp(&self, other: &Rating) -> Option<std::cmp::Ordering> {
-        (self.mu - 3.0 * self.sigma).partial_cmp(&(other.mu - 3.0 * other.sigma))
+        self.conservative_estimate()
+            .partial_cmp(&other.conservative_estimate())
     }
 }
 
 impl fmt::Display for Rating {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let conservative_estimate = self.mu - 3.0 * self.sigma;
-        write!(f, "{}", conservative_estimate.max(0.0))
+        write!(f, "{}", self.conservative_estimate())
     }
 }
 
@@ -333,6 +333,11 @@ impl Rating {
     /// Returns the variance on the estimate of the player's skill.
     pub fn sigma(&self) -> f64 {
         self.sigma
+    }
+
+    /// Returns the conservative estimate of the player's skill.
+    pub fn conservative_estimate(&self) -> f64 {
+        (self.mu - 3.0 * self.sigma).max(0.0)
     }
 
     fn sigma_sq(&self) -> f64 {
