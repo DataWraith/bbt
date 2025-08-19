@@ -119,6 +119,7 @@ use std::fmt;
 
 /// Rater is used to calculate rating updates given the β-parameter.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug)]
 pub struct Rater {
     beta_sq: f64,
 }
