@@ -474,4 +474,58 @@ mod test {
         assert!((new_ratings[2][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
         assert!((new_ratings[3][0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
     }
+
+    // Error handling tests
+    #[test]
+    fn update_ratings_mismatched_lengths() {
+        let rater = Rater::default();
+        let teams = vec![vec![Rating::default()], vec![Rating::default()]];
+        let ranks = vec![1, 2, 3]; // Wrong length
+
+        let result = rater.update_ratings(teams, ranks);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "`teams` and `ranks` vectors must be of the same length"
+        );
+    }
+
+    #[test]
+    fn update_ratings_empty_team() {
+        let rater = Rater::default();
+        let teams = vec![vec![Rating::default()], vec![]]; // Empty team
+        let ranks = vec![1, 2];
+
+        let result = rater.update_ratings(teams, ranks);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "At least one of the teams contains no players"
+        );
+    }
+
+    #[test]
+    fn update_ratings_empty_input() {
+        let rater = Rater::default();
+        let teams: Vec<Vec<Rating>> = vec![];
+        let ranks: Vec<usize> = vec![];
+
+        let result = rater.update_ratings(teams, ranks);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 0);
+    }
+
+    // Edge cases and boundary conditions
+    #[test]
+    fn update_ratings_single_team() {
+        let rater = Rater::default();
+        let original_rating = Rating::default();
+        let teams = vec![vec![original_rating]];
+        let ranks = vec![1];
+
+        let result = rater.update_ratings(teams, ranks).unwrap();
+        // With only one team, rating should remain unchanged
+        assert_eq!(result[0][0].mu, original_rating.mu);
+        assert_eq!(result[0][0].sigma, original_rating.sigma);
+    }
 }
