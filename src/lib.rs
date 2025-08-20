@@ -150,8 +150,8 @@ impl std::fmt::Display for Rater {
 impl Rater {
     /// This method takes a vector of teams, with each team being a vector of
     /// player ratings, and a slice, Vec or array of ranks of the same size. The
-    /// ranks specify the order in which the teams finished a game. It returns
-    /// either
+    /// ranks specify the ranking of the corresponding team in the game. It
+    /// returns either
     ///
     /// `Err(error_message)` if the input is incorrect or
     /// `Ok(Vec<Vec<Rating>>)`.
