@@ -98,7 +98,7 @@
 //! let new_ratings = rater.update_ratings(&teams, [1, 2, 2, 4]).unwrap();
 //! ```
 //!
-//! The second vector assigns a rank to the teams given in the first vector.
+//! The second argument assigns a rank to the teams given in the first vector.
 //! Team 1 placed first, teams 2 and 3 tie for second place and team 4 comes in
 //! fourth.
 //!
@@ -590,6 +590,33 @@ mod test {
         // With only one team, rating should remain unchanged
         assert_eq!(result[0][0].mu, original_rating.mu);
         assert_eq!(result[0][0].sigma, original_rating.sigma);
+    }
+
+    // Conversion from Vec<Vec<Rating>> to slices
+    #[test]
+    fn vec_to_slice_conversion() {
+        let rater = Rater::default();
+        let p1 = Rating::default();
+        let p2 = Rating::default();
+        let p3 = Rating::default();
+        let p4 = Rating::default();
+
+        // Start with Vec<Vec<Rating>> (old API style)
+        let teams_vec = vec![vec![p1], vec![p2, p3], vec![p4]];
+        let ranks = [1, 2, 3];
+
+        // Convert to slice of slices for the new API
+        let teams_slices: Vec<&[Rating]> = teams_vec.iter().map(|team| team.as_slice()).collect();
+        let result = rater.update_ratings(&teams_slices, ranks).unwrap();
+
+        // Verify the results are correct
+        assert!(result[0][0].mu > result[1][0].mu); // Team 1 beat team 2
+        assert!(result[1][0].mu > result[2][0].mu); // Team 2 beat team 3
+        assert_eq!(result[1][0].mu, result[1][1].mu); // Team members have equal ratings
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].len(), 1);
+        assert_eq!(result[1].len(), 2);
+        assert_eq!(result[2].len(), 1);
     }
 
     // Error enum tests
