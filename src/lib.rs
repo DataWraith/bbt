@@ -60,7 +60,7 @@
 //!
 //! let new_ratings = rater.update_ratings(vec![vec![p1], vec![p2], vec![p3],
 //!                                             vec![p4], vec![p5], vec![p6]],
-//!                                        &[1, 2, 3, 4, 5, 6]).unwrap();
+//!                                        [1, 2, 3, 4, 5, 6]).unwrap();
 //! ```
 //!
 //! In the example, the first player places first, the second player second, and
@@ -95,7 +95,7 @@
 //!                                             vec![charlie, dave],
 //!                                             vec![eve, fred],
 //!                                             vec![gabe, henry]],
-//!                                        &[1, 2, 2, 4]).unwrap();
+//!                                        [1, 2, 2, 4]).unwrap();
 //! ```
 //!
 //! The second vector assigns a rank to the teams given in the first vector.
@@ -149,16 +149,25 @@ impl std::fmt::Display for Rater {
 
 impl Rater {
     /// This method takes a vector of teams, with each team being a vector of
-    /// player ratings, and a slice of ranks of the same size that specifies the
-    /// order in which the team finished a game. It returns either
+    /// player ratings, and a slice, Vec or array of ranks of the same size. The
+    /// ranks specify the order in which the teams finished a game. It returns
+    /// either
+    ///
     /// `Err(error_message)` if the input is incorrect or
-    /// `Ok(Vec<Vec<Rating>>)`. The returned vector is an updated version of
-    /// the `teams` vector that was passed into the function.
-    pub fn update_ratings(
+    /// `Ok(Vec<Vec<Rating>>)`.
+    ///
+    /// The returned vector is an updated version of the `teams` vector that was
+    /// passed into the function.
+    pub fn update_ratings<Ranks>(
         &self,
         teams: Vec<Vec<Rating>>,
-        ranks: &[usize],
-    ) -> Result<Vec<Vec<Rating>>, &'static str> {
+        ranks: Ranks,
+    ) -> Result<Vec<Vec<Rating>>, &'static str>
+    where
+        Ranks: AsRef<[usize]>,
+    {
+        let ranks = ranks.as_ref();
+
         if teams.len() != ranks.len() {
             return Err("`teams` and `ranks` vectors must be of the same length");
         }
@@ -258,9 +267,9 @@ impl Rater {
     pub fn duel(&self, p1: Rating, p2: Rating, outcome: Outcome) -> (Rating, Rating) {
         let teams = vec![vec![p1], vec![p2]];
         let ranks = match outcome {
-            Outcome::Win => &[1, 2],
-            Outcome::Loss => &[2, 1],
-            Outcome::Draw => &[1, 1],
+            Outcome::Win => [1, 2],
+            Outcome::Loss => [2, 1],
+            Outcome::Draw => [1, 1],
         };
 
         let result = self.update_ratings(teams, ranks).unwrap();
@@ -447,7 +456,7 @@ mod test {
 
         let rater = Rater::default();
         let new_rs = rater
-            .update_ratings(vec![vec![p1], vec![p2]], &[0, 1])
+            .update_ratings(vec![vec![p1], vec![p2]], [0, 1])
             .unwrap();
 
         assert!((new_rs[0][0].mu - 27.63523138).abs() < 1.0 / 100000000.0);
@@ -465,7 +474,7 @@ mod test {
 
         let rater = Rater::default();
         let teams = vec![vec![p1], vec![p2], vec![p3], vec![p4]];
-        let ranks = &[1, 2, 3, 4];
+        let ranks = vec![1, 2, 3, 4];
 
         let new_ratings = rater.update_ratings(teams, ranks).unwrap();
 
@@ -488,7 +497,7 @@ mod test {
 
         let rater = Rater::default();
         let teams = vec![vec![p1], vec![p2, p3]];
-        let ranks = &[1, 2];
+        let ranks = [1, 2];
 
         let new_ratings = rater.update_ratings(teams, ranks).unwrap();
 
@@ -502,7 +511,7 @@ mod test {
     fn update_ratings_mismatched_lengths() {
         let rater = Rater::default();
         let teams = vec![vec![Rating::default()], vec![Rating::default()]];
-        let ranks = &[1, 2, 3]; // Wrong length
+        let ranks = [1, 2, 3]; // Wrong length
 
         let result = rater.update_ratings(teams, ranks);
         assert!(result.is_err());
@@ -516,7 +525,7 @@ mod test {
     fn update_ratings_empty_team() {
         let rater = Rater::default();
         let teams = vec![vec![Rating::default()], vec![]]; // Empty team
-        let ranks = &[1, 2];
+        let ranks = [1, 2];
 
         let result = rater.update_ratings(teams, ranks);
         assert!(result.is_err());
@@ -543,7 +552,7 @@ mod test {
         let rater = Rater::default();
         let original_rating = Rating::default();
         let teams = vec![vec![original_rating]];
-        let ranks = &[1];
+        let ranks = vec![1];
 
         let result = rater.update_ratings(teams, ranks).unwrap();
         // With only one team, rating should remain unchanged
