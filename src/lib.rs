@@ -115,6 +115,7 @@
 use serde::{Deserialize, Serialize};
 
 use std::cmp::Ordering;
+use std::error::Error;
 use std::fmt;
 
 /// Rater is used to calculate rating updates given the β-parameter.
@@ -153,7 +154,7 @@ impl Rater {
     /// ranks specify the ranking of the corresponding team in the game. It
     /// returns either
     ///
-    /// `Err(error_message)` if the input is incorrect or
+    /// `Err(BBTError)` if the input is incorrect or
     /// `Ok(Vec<Vec<Rating>>)`.
     ///
     /// The returned vector is an updated version of the `teams` vector that was
@@ -162,14 +163,14 @@ impl Rater {
         &self,
         teams: Vec<Vec<Rating>>,
         ranks: Ranks,
-    ) -> Result<Vec<Vec<Rating>>, &'static str>
+    ) -> Result<Vec<Vec<Rating>>, BBTError>
     where
         Ranks: AsRef<[usize]>,
     {
         let ranks = ranks.as_ref();
 
         if teams.len() != ranks.len() {
-            return Err("`teams` and `ranks` vectors must be of the same length");
+            return Err(BBTError::MismatchedVectorLengths);
         }
 
         let mut team_mu = vec![0.0; teams.len()];
@@ -183,7 +184,7 @@ impl Rater {
 
         for (team_idx, team) in teams.iter().enumerate() {
             if team.is_empty() {
-                return Err("At least one of the teams contains no players");
+                return Err(BBTError::EmptyTeam);
             }
 
             for player in team.iter() {
@@ -354,9 +355,33 @@ impl Rating {
     }
 }
 
+/// Error type for BBT rating calculation
+#[derive(Debug, Clone, PartialEq)]
+pub enum BBTError {
+    /// The teams and ranks have different lengths.
+    MismatchedVectorLengths,
+    /// One or more teams contain no players.
+    EmptyTeam,
+}
+
+impl fmt::Display for BBTError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BBTError::MismatchedVectorLengths => {
+                write!(f, "`teams` and `ranks` must be of the same length")
+            }
+            BBTError::EmptyTeam => {
+                write!(f, "At least one of the teams contains no players")
+            }
+        }
+    }
+}
+
+impl Error for BBTError {}
+
 #[cfg(test)]
 mod test {
-    use crate::{Outcome, Rater, Rating};
+    use crate::{BBTError, Outcome, Rater, Rating};
 
     // Tests for Rater struct
     #[test]
@@ -515,10 +540,7 @@ mod test {
 
         let result = rater.update_ratings(teams, ranks);
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            "`teams` and `ranks` vectors must be of the same length"
-        );
+        assert_eq!(result.unwrap_err(), BBTError::MismatchedVectorLengths);
     }
 
     #[test]
@@ -529,10 +551,7 @@ mod test {
 
         let result = rater.update_ratings(teams, ranks);
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            "At least one of the teams contains no players"
-        );
+        assert_eq!(result.unwrap_err(), BBTError::EmptyTeam);
     }
 
     #[test]
@@ -558,5 +577,22 @@ mod test {
         // With only one team, rating should remain unchanged
         assert_eq!(result[0][0].mu, original_rating.mu);
         assert_eq!(result[0][0].sigma, original_rating.sigma);
+    }
+
+    // Error enum tests
+    #[test]
+    fn error_messages_are_accessible() {
+        let mismatch_error = BBTError::MismatchedVectorLengths;
+        let empty_team_error = BBTError::EmptyTeam;
+
+        assert_eq!(
+            "`teams` and `ranks` must be of the same length",
+            mismatch_error.to_string()
+        );
+
+        assert_eq!(
+            "At least one of the teams contains no players",
+            empty_team_error.to_string()
+        );
     }
 }
