@@ -134,8 +134,8 @@ impl Rater {
 }
 
 impl Default for Rater {
-    /// This method instantiates a new rater the default β-parameter of 25.0/6.0
-    /// used in the paper.
+    /// This method instantiates a new rater with the default β-parameter of
+    /// 25.0/6.0 used in the paper.
     fn default() -> Rater {
         Rater::new(25.0 / 6.0)
     }
