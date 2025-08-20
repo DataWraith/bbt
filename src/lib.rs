@@ -38,9 +38,9 @@
 //! ### Multiplayer games
 //!
 //! Games with more than two players will have to use the general
-//! `update_ratings` method. It takes mutable slices of teams and a vector of ranks,
-//! with each team being a mutable slice of player ratings. The ratings are
-//! updated in place.
+//! `update_ratings` method. It takes mutable slices of teams and a container of
+//! ranks, with each team being a mutable slice of player ratings. The ratings
+//! are updated in place.
 //!
 //! #### Example 1: Racing Game
 //!
@@ -98,7 +98,7 @@
 //! rater.update_ratings(&mut teams, [1, 2, 2, 4]).unwrap();
 //! ```
 //!
-//! The second argument assigns a rank to the teams given in the first vector.
+//! The second argument assigns a rank to the teams given in the first argument.
 //! Team 1 placed first, teams 2 and 3 tie for second place and team 4 comes in
 //! fourth.
 //!
@@ -166,7 +166,7 @@ impl Rater {
         let ranks = ranks.as_ref();
 
         if teams.len() != ranks.len() {
-            return Err(BBTError::MismatchedVectorLengths);
+            return Err(BBTError::MismatchedLengths);
         }
 
         let mut team_mu = vec![0.0; teams.len()];
@@ -356,7 +356,7 @@ impl Rating {
 #[derive(Debug, Clone, PartialEq)]
 pub enum BBTError {
     /// The teams and ranks have different lengths.
-    MismatchedVectorLengths,
+    MismatchedLengths,
     /// One or more teams contain no players.
     EmptyTeam,
 }
@@ -364,7 +364,7 @@ pub enum BBTError {
 impl fmt::Display for BBTError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            BBTError::MismatchedVectorLengths => {
+            BBTError::MismatchedLengths => {
                 write!(f, "`teams` and `ranks` must be of the same length")
             }
             BBTError::EmptyTeam => {
@@ -555,7 +555,7 @@ mod test {
 
         let result = rater.update_ratings(&mut teams, ranks);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), BBTError::MismatchedVectorLengths);
+        assert_eq!(result.unwrap_err(), BBTError::MismatchedLengths);
     }
 
     #[test]
@@ -629,7 +629,7 @@ mod test {
     // Error enum tests
     #[test]
     fn error_messages_are_accessible() {
-        let mismatch_error = BBTError::MismatchedVectorLengths;
+        let mismatch_error = BBTError::MismatchedLengths;
         let empty_team_error = BBTError::EmptyTeam;
 
         assert_eq!(
