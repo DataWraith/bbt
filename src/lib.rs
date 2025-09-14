@@ -127,7 +127,7 @@ pub struct Rater {
 
 impl Rater {
     /// This method instantiates a new rater with the given β-parameter.
-    pub fn new(beta: f64) -> Rater {
+    pub const fn new(beta: f64) -> Rater {
         Rater {
             beta_sq: beta * beta,
         }
@@ -328,27 +328,27 @@ impl fmt::Debug for Rating {
 }
 
 impl Rating {
-    pub fn new(mu: f64, sigma: f64) -> Rating {
+    pub const fn new(mu: f64, sigma: f64) -> Rating {
         Rating { mu, sigma }
     }
 
     /// Returns the estimated skill of the player.
-    pub fn mu(&self) -> f64 {
+    pub const fn mu(&self) -> f64 {
         self.mu
     }
 
     /// Returns the variance on the estimate of the player's skill.
-    pub fn sigma(&self) -> f64 {
+    pub const fn sigma(&self) -> f64 {
         self.sigma
     }
 
     /// Returns the conservative estimate of the player's skill.
-    pub fn conservative_estimate(&self) -> f64 {
+    pub const fn conservative_estimate(&self) -> f64 {
         (self.mu - 3.0 * self.sigma).max(0.0)
     }
 
-    fn sigma_sq(&self) -> f64 {
-        self.sigma.powf(2.0)
+    const fn sigma_sq(&self) -> f64 {
+        self.sigma * self.sigma
     }
 }
 
