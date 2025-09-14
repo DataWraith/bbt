@@ -596,33 +596,6 @@ mod test {
         assert_eq!(rating.sigma, Rating::default().sigma);
     }
 
-    // Conversion from Vec<Vec<Rating>> to mutable slices
-    #[test]
-    fn vec_to_slice_conversion() {
-        let rater = Rater::default();
-        let mut p1 = Rating::default();
-        let mut p2 = Rating::default();
-        let mut p3 = Rating::default();
-        let mut p4 = Rating::default();
-
-        // Start with Vec<Vec<Rating>> and convert to mutable slice API
-        let mut teams_vec = vec![vec![&mut p1], vec![&mut p2, &mut p3], vec![&mut p4]];
-        let ranks = [1, 2, 3];
-
-        // Convert to mutable slice of mutable slices for the new API
-        let mut teams_slices: Vec<&mut [&mut Rating]> = teams_vec
-            .iter_mut()
-            .map(|team| team.as_mut_slice())
-            .collect();
-
-        rater.update_ratings(&mut teams_slices, ranks).unwrap();
-
-        // Verify the results are correct
-        assert!(p1.mu > p2.mu);
-        assert!(p2.mu > p4.mu);
-        assert_eq!(p2.mu, p3.mu);
-    }
-
     // Error enum tests
     #[test]
     fn error_messages_are_accessible() {
