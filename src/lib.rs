@@ -38,8 +38,8 @@
 //!
 //! Games with more than two players will have to use the general
 //! `update_ratings` method. It takes mutable slices of teams and a container of
-//! ranks, with each team being a mutable slice of player ratings. The ratings
-//! are updated in place.
+//! ranks, with each team being a mutable slice of (mutable) player ratings. The
+//! ratings are updated in place.
 //!
 //! #### Example 1: Racing Game
 //!
@@ -50,16 +50,17 @@
 //! ```rust
 //! let rater = bbt::Rater::default();
 //!
-//! let p1 = bbt::Rating::default();
-//! let p2 = bbt::Rating::default();
-//! let p3 = bbt::Rating::default();
-//! let p4 = bbt::Rating::default();
-//! let p5 = bbt::Rating::default();
-//! let p6 = bbt::Rating::default();
+//! let mut p1 = bbt::Rating::default();
+//! let mut p2 = bbt::Rating::default();
+//! let mut p3 = bbt::Rating::default();
+//! let mut p4 = bbt::Rating::default();
+//! let mut p5 = bbt::Rating::default();
+//! let mut p6 = bbt::Rating::default();
 //!
-//! let mut team1 = [p1]; let mut team2 = [p2]; let mut team3 = [p3];
-//! let mut team4 = [p4]; let mut team5 = [p5]; let mut team6 = [p6];
+//! let mut team1 = [&mut p1]; let mut team2 = [&mut p2]; let mut team3 = [&mut p3];
+//! let mut team4 = [&mut p4]; let mut team5 = [&mut p5]; let mut team6 = [&mut p6];
 //! let mut teams = [&mut team1[..], &mut team2[..], &mut team3[..], &mut team4[..], &mut team5[..], &mut team6[..]];
+//!
 //! rater.update_ratings(&mut teams, [1, 2, 3, 4, 5, 6]).unwrap();
 //! ```
 //!
@@ -82,18 +83,19 @@
 //! ```rust
 //! let rater = bbt::Rater::default();
 //!
-//! let alice   = bbt::Rating::default();
-//! let bob     = bbt::Rating::default();
-//! let charlie = bbt::Rating::default();
-//! let dave    = bbt::Rating::default();
-//! let eve     = bbt::Rating::default();
-//! let fred    = bbt::Rating::default();
-//! let gabe    = bbt::Rating::default();
-//! let henry   = bbt::Rating::default();
+//! let mut alice   = bbt::Rating::default();
+//! let mut bob     = bbt::Rating::default();
+//! let mut charlie = bbt::Rating::default();
+//! let mut dave    = bbt::Rating::default();
+//! let mut eve     = bbt::Rating::default();
+//! let mut fred    = bbt::Rating::default();
+//! let mut gabe    = bbt::Rating::default();
+//! let mut henry   = bbt::Rating::default();
 //!
-//! let mut team1 = [alice, bob]; let mut team2 = [charlie, dave];
-//! let mut team3 = [eve, fred]; let mut team4 = [gabe, henry];
+//! let mut team1 = [&mut alice, &mut bob]; let mut team2 = [&mut charlie, &mut dave];
+//! let mut team3 = [&mut eve, &mut fred]; let mut team4 = [&mut gabe, &mut henry];
 //! let mut teams = [&mut team1[..], &mut team2[..], &mut team3[..], &mut team4[..]];
+//!
 //! rater.update_ratings(&mut teams, [1, 2, 2, 4]).unwrap();
 //! ```
 //!
@@ -148,15 +150,16 @@ impl std::fmt::Display for Rater {
 }
 
 impl Rater {
-    /// This method takes a mutable slice of teams, with each team being a mutable slice of
-    /// player ratings, and a slice, Vec or array of ranks of the same size. The
-    /// ranks specify the ranking of the corresponding team in the game. The ratings
-    /// are updated in place.
+    /// This method takes a mutable slice of teams, with each team being a
+    /// mutable slice of (mutable) player ratings, and a slice, Vec or array of
+    /// `usize` ranks of the same size. The ranks specify the ranking of the
+    /// corresponding team in the game (1st, 2nd, etc.). The ratings are updated
+    /// in place.
     ///
     /// Returns `Err(BBTError)` if the input is incorrect, otherwise `Ok(())`.
     pub fn update_ratings<Ranks>(
         &self,
-        teams: &mut [&mut [Rating]],
+        teams: &mut [&mut [&mut Rating]],
         ranks: Ranks,
     ) -> Result<(), BBTError>
     where
@@ -254,8 +257,8 @@ impl Rater {
     /// player won and `Draw` if neither player won. The ratings are updated
     /// in place.
     pub fn duel(&self, p1: &mut Rating, p2: &mut Rating, outcome: Outcome) {
-        let mut team1 = [*p1];
-        let mut team2 = [*p2];
+        let mut team1 = [p1];
+        let mut team2 = [p2];
         let mut teams = [&mut team1[..], &mut team2[..]];
 
         let ranks = match outcome {
@@ -267,11 +270,6 @@ impl Rater {
         // Safe, since we know that teams[0] and teams[1] have the same length
         // and are non-empty
         self.update_ratings(&mut teams, ranks).unwrap();
-
-        // This is a bit ugly, but I wasn't able to satisfy the borrow checker
-        // otherwise.
-        *p1 = team1[0];
-        *p2 = team2[0];
     }
 }
 
@@ -477,33 +475,34 @@ mod test {
 
     #[test]
     fn two_player_duel_win_loss() {
-        let p1 = Rating::default();
-        let p2 = Rating::default();
+        let mut p1 = Rating::default();
+        let mut p2 = Rating::default();
 
         let rater = Rater::default();
-        let mut team1 = [p1];
-        let mut team2 = [p2];
+        let mut team1 = [&mut p1];
+        let mut team2 = [&mut p2];
         let mut teams = [&mut team1[..], &mut team2[..]];
+
         rater.update_ratings(&mut teams, [0, 1]).unwrap();
 
-        assert!((team1[0].mu - 27.63523138).abs() < 1.0 / 100000000.0);
-        assert!((team1[0].sigma - 8.0655063).abs() < 1.0 / 1000000.0);
-        assert!((team2[0].mu - 22.36476861).abs() < 1.0 / 100000000.0);
-        assert!((team2[0].sigma - 8.0655063).abs() < 1.0 / 1000000.0);
+        assert!((p1.mu - 27.63523138).abs() < 1.0 / 100000000.0);
+        assert!((p1.sigma - 8.0655063).abs() < 1.0 / 1000000.0);
+        assert!((p2.mu - 22.36476861).abs() < 1.0 / 100000000.0);
+        assert!((p2.sigma - 8.0655063).abs() < 1.0 / 1000000.0);
     }
 
     #[test]
     fn four_player_race() {
-        let p1 = Rating::default();
-        let p2 = Rating::default();
-        let p3 = Rating::default();
-        let p4 = Rating::default();
+        let mut p1 = Rating::default();
+        let mut p2 = Rating::default();
+        let mut p3 = Rating::default();
+        let mut p4 = Rating::default();
 
         let rater = Rater::default();
-        let mut team1 = [p1];
-        let mut team2 = [p2];
-        let mut team3 = [p3];
-        let mut team4 = [p4];
+        let mut team1 = [&mut p1];
+        let mut team2 = [&mut p2];
+        let mut team3 = [&mut p3];
+        let mut team4 = [&mut p4];
         let mut teams = [
             &mut team1[..],
             &mut team2[..],
@@ -514,42 +513,42 @@ mod test {
 
         rater.update_ratings(&mut teams, ranks).unwrap();
 
-        assert!((team1[0].mu - 32.9056941).abs() < 1.0 / 10000000.0);
-        assert!((team2[0].mu - 27.6352313).abs() < 1.0 / 10000000.0);
-        assert!((team3[0].mu - 22.3647686).abs() < 1.0 / 10000000.0);
-        assert!((team4[0].mu - 17.0943058).abs() < 1.0 / 10000000.0);
+        assert!((p1.mu - 32.9056941).abs() < 1.0 / 10000000.0);
+        assert!((p2.mu - 27.6352313).abs() < 1.0 / 10000000.0);
+        assert!((p3.mu - 22.3647686).abs() < 1.0 / 10000000.0);
+        assert!((p4.mu - 17.0943058).abs() < 1.0 / 10000000.0);
 
-        assert!((team1[0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
-        assert!((team2[0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
-        assert!((team3[0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
-        assert!((team4[0].sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((p1.sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((p2.sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((p3.sigma - 7.50121906).abs() < 1.0 / 1000000.0);
+        assert!((p4.sigma - 7.50121906).abs() < 1.0 / 1000000.0);
     }
 
     #[test]
     fn uneven_teams() {
-        let p1 = Rating::default();
-        let p2 = Rating::default();
-        let p3 = Rating::default();
+        let mut p1 = Rating::default();
+        let mut p2 = Rating::default();
+        let mut p3 = Rating::default();
 
         let rater = Rater::default();
-        let mut team1 = [p1];
-        let mut team2 = [p2, p3];
+        let mut team1 = [&mut p1];
+        let mut team2 = [&mut p2, &mut p3];
         let mut teams = [&mut team1[..], &mut team2[..]];
         let ranks = [1, 2];
 
         rater.update_ratings(&mut teams, ranks).unwrap();
 
-        assert!(team1[0].mu > team2[0].mu);
-        assert!(team1[0].mu > team2[1].mu);
-        assert!(team2[0].mu == team2[1].mu);
+        assert!(p1.mu > p2.mu);
+        assert!(p1.mu > p3.mu);
+        assert!(p2.mu == p3.mu);
     }
 
     // Error handling tests
     #[test]
     fn update_ratings_mismatched_lengths() {
         let rater = Rater::default();
-        let mut team1 = [Rating::default()];
-        let mut team2 = [Rating::default()];
+        let mut team1 = [&mut Rating::default()];
+        let mut team2 = [&mut Rating::default()];
         let mut teams = [&mut team1[..], &mut team2[..]];
         let ranks = [1, 2, 3]; // Wrong length
 
@@ -561,8 +560,8 @@ mod test {
     #[test]
     fn update_ratings_empty_team() {
         let rater = Rater::default();
-        let mut team1 = [Rating::default()];
-        let mut team2: [Rating; 0] = []; // Empty team
+        let mut team1 = [&mut Rating::default()];
+        let mut team2: [&mut Rating; 0] = []; // Empty team
         let mut teams = [&mut team1[..], &mut team2[..]];
         let ranks = [1, 2];
 
@@ -574,7 +573,7 @@ mod test {
     #[test]
     fn update_ratings_empty_input() {
         let rater = Rater::default();
-        let teams: &mut [&mut [Rating]] = &mut [];
+        let teams: &mut [&mut [&mut Rating]] = &mut [];
         let ranks: &[usize] = &[];
 
         let result = rater.update_ratings(teams, ranks);
@@ -585,45 +584,43 @@ mod test {
     #[test]
     fn update_ratings_single_team() {
         let rater = Rater::default();
-        let original_rating = Rating::default();
-        let mut team1 = [original_rating];
+        let mut rating = Rating::default();
+        let mut team1 = [&mut rating];
         let mut teams = [&mut team1[..]];
         let ranks = vec![1];
 
         rater.update_ratings(&mut teams, ranks).unwrap();
+
         // With only one team, rating should remain unchanged
-        assert_eq!(team1[0].mu, original_rating.mu);
-        assert_eq!(team1[0].sigma, original_rating.sigma);
+        assert_eq!(rating.mu, Rating::default().mu);
+        assert_eq!(rating.sigma, Rating::default().sigma);
     }
 
     // Conversion from Vec<Vec<Rating>> to mutable slices
     #[test]
     fn vec_to_slice_conversion() {
         let rater = Rater::default();
-        let p1 = Rating::default();
-        let p2 = Rating::default();
-        let p3 = Rating::default();
-        let p4 = Rating::default();
+        let mut p1 = Rating::default();
+        let mut p2 = Rating::default();
+        let mut p3 = Rating::default();
+        let mut p4 = Rating::default();
 
         // Start with Vec<Vec<Rating>> and convert to mutable slice API
-        let mut teams_vec = vec![vec![p1], vec![p2, p3], vec![p4]];
+        let mut teams_vec = vec![vec![&mut p1], vec![&mut p2, &mut p3], vec![&mut p4]];
         let ranks = [1, 2, 3];
 
         // Convert to mutable slice of mutable slices for the new API
-        let mut teams_slices: Vec<&mut [Rating]> = teams_vec
+        let mut teams_slices: Vec<&mut [&mut Rating]> = teams_vec
             .iter_mut()
             .map(|team| team.as_mut_slice())
             .collect();
+
         rater.update_ratings(&mut teams_slices, ranks).unwrap();
 
         // Verify the results are correct
-        assert!(teams_vec[0][0].mu > teams_vec[1][0].mu); // Team 1 beat team 2
-        assert!(teams_vec[1][0].mu > teams_vec[2][0].mu); // Team 2 beat team 3
-        assert_eq!(teams_vec[1][0].mu, teams_vec[1][1].mu); // Team members have equal ratings
-        assert_eq!(teams_vec.len(), 3);
-        assert_eq!(teams_vec[0].len(), 1);
-        assert_eq!(teams_vec[1].len(), 2);
-        assert_eq!(teams_vec[2].len(), 1);
+        assert!(p1.mu > p2.mu);
+        assert!(p2.mu > p4.mu);
+        assert_eq!(p2.mu, p3.mu);
     }
 
     // Error enum tests
