@@ -20,9 +20,8 @@
 //!
 //! ### Two-player games (e.g. Chess)
 //!
-//! BBT has a convenience function for two-player games that updates the
-//! ratings for the two players in place after a game. In the example, p1 wins against
-//! p2:
+//! BBT has a convenience function for two-player games that updates the ratings
+//! for the two players in place after a game. In the example, p1 wins against p2:
 //!
 //! ```rust
 //! let rater = bbt::Rater::default();
@@ -328,6 +327,7 @@ impl fmt::Debug for Rating {
 }
 
 impl Rating {
+    /// Instantiates a Rating with the given values of mu and sigma.
     pub const fn new(mu: f64, sigma: f64) -> Rating {
         Rating { mu, sigma }
     }
