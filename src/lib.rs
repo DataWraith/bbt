@@ -125,7 +125,7 @@ pub struct Rater {
 }
 
 impl Rater {
-    /// This method instantiates a new rater with the given β-parameter.
+    /// This method instantiates a new Rater with the given β-parameter.
     pub const fn new(beta: f64) -> Rater {
         Rater {
             beta_sq: beta * beta,
@@ -134,7 +134,7 @@ impl Rater {
 }
 
 impl Default for Rater {
-    /// This method instantiates a new rater with the default β-parameter of
+    /// This method instantiates a new Rater with the default β-parameter of
     /// 25.0/6.0 used in the paper.
     fn default() -> Rater {
         Rater::new(25.0 / 6.0)
