@@ -337,7 +337,7 @@ impl Rating {
         self.mu
     }
 
-    /// Returns the variance on the estimate of the player's skill.
+    /// Returns the standard deviation on the estimate of the player's skill.
     pub const fn sigma(&self) -> f64 {
         self.sigma
     }
