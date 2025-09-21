@@ -383,7 +383,7 @@ mod test {
     fn rater_display() {
         let beta = 4.0;
         let rater = Rater::new(beta);
-        let display_str = format!("{}", rater);
+        let display_str = format!("{rater}");
         assert!(display_str.contains("Rater(β=4.0000)"));
     }
 
@@ -406,7 +406,7 @@ mod test {
     #[test]
     fn rating_display() {
         let rating = Rating::new(25.0, 8.0);
-        let display_str = format!("{}", rating);
+        let display_str = format!("{rating}");
         // Conservative estimate should be max(0.0, mu - 3*sigma) = max(0.0, 25 - 24) = 1
         assert_eq!(display_str, "1");
     }
@@ -414,14 +414,14 @@ mod test {
     #[test]
     fn rating_debug() {
         let rating = Rating::new(25.0, 8.0);
-        let debug_str = format!("{:?}", rating);
+        let debug_str = format!("{rating:?}");
         assert_eq!(debug_str, "25±24");
     }
 
     #[test]
     fn rating_display_negative_conservative_estimate() {
         let rating = Rating::new(5.0, 8.0);
-        let display_str = format!("{}", rating);
+        let display_str = format!("{rating}");
         // Conservative estimate would be negative, so should show 0
         assert_eq!(display_str, "0");
     }
