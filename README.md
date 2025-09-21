@@ -1,6 +1,3 @@
-**Status**: I consider this project done. If you need something to change,
-please open an issue for discussion before submitting a pull request.
-
 # BBT
 
 BBT is an implementation of a skill-rating system similar to Elo, Glicko or
