@@ -267,7 +267,7 @@ impl Rater {
             Outcome::Draw => [1, 1],
         };
 
-        // Safe, since we know that teams[0] and teams[1] have the same length
+        // Safe, since we know that `teams` and `ranks` have the same lengths,
         // and are non-empty
         self.update_ratings(&mut teams, ranks).unwrap();
     }
