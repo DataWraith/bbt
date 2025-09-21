@@ -570,6 +570,7 @@ mod test {
         assert_eq!(result.unwrap_err(), BBTError::EmptyTeam);
     }
 
+    // Edge cases and boundary conditions
     #[test]
     fn update_ratings_empty_input() {
         let rater = Rater::default();
@@ -580,7 +581,6 @@ mod test {
         assert!(result.is_ok());
     }
 
-    // Edge cases and boundary conditions
     #[test]
     fn update_ratings_single_team() {
         let rater = Rater::default();
